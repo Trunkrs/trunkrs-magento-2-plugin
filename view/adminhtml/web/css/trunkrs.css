@@ -1,0 +1,10 @@
+.trunkrs-token {
+    color: #00d763;
+    font-size: 18px;
+    font-weight: bolder;
+    cursor: pointer;
+}
+
+#row_carriers_trunkrsShipping_trunkrs_token{
+    display: none;
+}

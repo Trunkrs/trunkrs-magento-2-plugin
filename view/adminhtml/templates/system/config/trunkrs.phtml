@@ -1,0 +1,41 @@
+<?php
+/**
+ * Copyright © 2019 Trunkrs. All rights reserved.
+ * See LICENSE.txt for license details.
+ */
+
+/* @var $block \Trunkrs\Carrier\Block\Adminhtml\System\Config\TimeRange */
+
+echo
+    "
+    <p class='trunkrs-token' data-toggle='clickToken' title='Click to Copy!'>"
+        .$this->helper('Trunkrs\Carrier\Helper\Data')->getIntegrationToken().
+    "
+    </p>
+    <p id='copy-msg'>
+     Click the above token to copy.
+    </p>";
+?>
+<script>
+    require([
+        'jquery',
+        'jquery/ui'
+    ], function($){
+        $(document).ready(function(){
+            function copyToClipboard(element) {
+                var $temp = $("<input>");
+                $("body").append($temp);
+                $temp.val($(element).text()).select();
+                document.execCommand("copy");
+                $temp.remove();
+            }
+
+            $('[data-toggle="clickToken"]').tooltip();
+
+            $(".trunkrs-token").click(function() {
+                copyToClipboard($.trim($(this)))
+                $('#copy-msg').text('Token copied!')
+            });
+        })
+    });
+</script>
