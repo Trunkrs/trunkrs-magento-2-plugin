@@ -32,10 +32,13 @@ PHP Version 7.1.24 or later
 Run the following command: 
 ```bash
 composer require trunkrs/magento-2-carrier-plugin
+```
+
+```bash
+php bin/magento setup:upgrade  
+php bin/magento setup:static-content:deploy -f  
+php bin/magento cache:flush
 ```  
-```sudo php bin/magento setup:upgrade```  
-```sudo php bin/magento setup:static-content:deploy -f```  
-```sudo php bin/magento cache:flush```  
 
 Done.
 
