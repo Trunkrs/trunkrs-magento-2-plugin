@@ -14,6 +14,11 @@ class TrunkrsOrderShipmentData implements ObserverInterface
     public $helper;
 
     /**
+     * @var ShipmentTrackInterfaceFactory
+     */
+    private $trackFactory;
+
+    /**
      * @var \Magento\Sales\Api\OrderRepositoryInterface
      */
     protected $orderRepository;
@@ -28,16 +33,19 @@ class TrunkrsOrderShipmentData implements ObserverInterface
      * @param Data $helper
      * @param \Magento\Sales\Api\OrderRepositoryInterface $orderRepository
      * @param \Magento\Sales\Model\Convert\Order $convertOrder
+     * @param \Magento\Sales\Api\Data\ShipmentTrackInterfaceFactory $trackFactory
      */
     public function __construct(
         Data $helper,
         \Magento\Sales\Api\OrderRepositoryInterface $orderRepository,
-        \Magento\Sales\Model\Convert\Order $convertOrder
+        \Magento\Sales\Model\Convert\Order $convertOrder,
+        \Magento\Sales\Api\Data\ShipmentTrackInterfaceFactory $trackFactory
     )
     {
         $this->helper = $helper;
         $this->orderRepository = $orderRepository;
         $this->convertOrder = $convertOrder;
+        $this->trackFactory = $trackFactory;
     }
 
     /**
@@ -52,10 +60,11 @@ class TrunkrsOrderShipmentData implements ObserverInterface
 
         /** @var \Magento\Sales\Model\Order $order $shippingName ...*/
         $shippingName = $order->getShippingMethod();
+        $shippingTitle = $order->getShippingDescription();
         $shippingDetailsData = $order->getShippingAddress();
         $orderReference = $order->getIncrementId();
 
-        //check whether an order can be ship or not
+        // check whether an order can be ship or not
         if ($order->canShip()) {
 
             if ($shippingName === Shipping::TRUNKRS_SHIPPING_METHOD){
@@ -95,7 +104,7 @@ class TrunkrsOrderShipmentData implements ObserverInterface
                     $orderShipment->save();
                     $orderShipment->getOrder()->save();
 
-                    //post shipment to Shipping portal
+                    // post shipment to Shipping portal
                     $urlHost = $this->helper->getShipmentEndpoint();
                     $client = new \GuzzleHttp\Client();
                     $data = array(
@@ -109,7 +118,18 @@ class TrunkrsOrderShipmentData implements ObserverInterface
                         "receiverCountry" => $receiverCountry
                     );
 
-                    $request = $client->post($urlHost, ['json' => $data]);
+                    $response = $client->post($urlHost, ['json' => $data]);
+                    $trackingInfo = \GuzzleHttp\json_decode($response->getBody());
+
+                    $track = $this->trackFactory->create();
+                    $track->setCarrierCode(Shipping::CARRIER_CODE);
+                    $track->setTitle($shippingTitle);
+                    $track->setTrackNumber($trackingInfo->trunkrsNr);
+
+                    $orderShipment->addTrack($track)
+                        ->setShippingAddressId($trackingInfo->shipmentId)
+                        ->setShippingLabel(base64_decode($trackingInfo->label));
+                    $orderShipment->save();
 
                 } catch (\Exception $e) {
                     throw new \Magento\Framework\Exception\LocalizedException(

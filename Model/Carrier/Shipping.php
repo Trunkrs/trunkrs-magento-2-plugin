@@ -10,6 +10,8 @@ use Magento\Shipping\Model\Carrier\CarrierInterface;
 class Shipping extends AbstractCarrier implements CarrierInterface
 {
     const TRUNKRS_SHIPPING_METHOD = 'trunkrsShipping_trunkrsShipping';
+    const CARRIER_CODE = 'trunkrsShipping';
+
     /**
      * @var string
      */
@@ -19,6 +21,16 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      * @var \Magento\Shipping\Model\Rate\ResultFactory
      */
     protected $_rateResultFactory;
+
+    /**
+     * @var \Magento\Shipping\Model\Tracking\ResultFactory
+     */
+    protected $_trackFactory;
+
+    /**
+     * @var \Magento\Shipping\Model\Tracking\Result\StatusFactory
+     */
+    protected $_statusFactory;
 
     /**
      * @var \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory
@@ -41,9 +53,11 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      * @param \Magento\Quote\Model\Quote\Address\RateResult\ErrorFactory $rateErrorFactory
      * @param \Psr\Log\LoggerInterface $logger
      * @param \Magento\Shipping\Model\Rate\ResultFactory $rateResultFactory
+     * @param \Magento\Shipping\Model\Tracking\ResultFactory $trackFactory
+     * @param \Magento\Shipping\Model\Tracking\Result\StatusFactory $statusFactory
      * @param \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory $rateMethodFactory
      * @param \Magento\Checkout\Model\Cart $cart
-     * @param \Magento\CatalogInventory\Api\StockRegistryInterface $stockItemRepository
+     * @param \Magento\CatalogInventory\Api\StockRegistryInterface $stockRepository
      * @param array $data
      */
     public function __construct(
@@ -51,12 +65,16 @@ class Shipping extends AbstractCarrier implements CarrierInterface
         \Magento\Quote\Model\Quote\Address\RateResult\ErrorFactory $rateErrorFactory,
         \Psr\Log\LoggerInterface $logger,
         \Magento\Shipping\Model\Rate\ResultFactory $rateResultFactory,
+        \Magento\Shipping\Model\Tracking\ResultFactory $trackFactory,
+        \Magento\Shipping\Model\Tracking\Result\StatusFactory $statusFactory,
         \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory $rateMethodFactory,
         \Magento\Checkout\Model\Cart $cart,
         \Magento\CatalogInventory\Api\StockRegistryInterface $stockRepository,
         array $data = []
     ) {
         $this->_rateResultFactory = $rateResultFactory;
+        $this->_trackFactory = $trackFactory;
+        $this->_statusFactory = $statusFactory;
         $this->_rateMethodFactory = $rateMethodFactory;
         $this->cart = $cart;
         $this->stockRepository = $stockRepository;
@@ -93,6 +111,36 @@ class Shipping extends AbstractCarrier implements CarrierInterface
         } catch (\Exception $e) {
             return false;
         }
+    }
+
+    /**
+     * @param $trackingId
+     * @return \Magento\Shipping\Model\Tracking\Result\Status
+     */
+    public function getTrackingInfo($trackingId)
+    {
+        $shipment = $this->trunkrsShippingMethod();
+
+        $result = $this->_trackFactory->create();
+        $tracking = $this->_statusFactory->create();
+
+        $tracking->setCarrier($this->_code);
+        $tracking->setCarrierTitle($shipment['title']);
+        $tracking->setTracking($trackingId);
+        $tracking->setUrl('https://parcel.trunkrs.nl/');
+
+        $result->append($tracking);
+        return $tracking;
+    }
+
+    /**
+     * Check if carrier has shipping tracking option available
+     *
+     * @return bool
+     */
+    public function isTrackingAvailable()
+    {
+        return true;
     }
 
     /**
