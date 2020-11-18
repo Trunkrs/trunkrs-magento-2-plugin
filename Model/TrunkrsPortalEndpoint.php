@@ -118,6 +118,13 @@ class TrunkrsPortalEndpoint implements TrunkrsShippingInterface
           0
         );
 
+        $this->resourceConfig->saveConfig(
+          'carriers/trunkrsShipping/title',
+          'Trunkrs',
+          'default',
+          0
+        );
+
         return \Zend_Json::encode(['Message' => __('Endpoint has been saved!')]);
       }
     }
