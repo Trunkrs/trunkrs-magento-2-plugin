@@ -48,6 +48,11 @@ class Shipping extends AbstractCarrier implements CarrierInterface
     protected $stockRepository;
 
     /**
+     * @var \Magento\Store\Model\StoreManagerInterface
+     */
+    protected $storeManagerInterface;
+
+    /**
      * Shipping constructor.
      * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
      * @param \Magento\Quote\Model\Quote\Address\RateResult\ErrorFactory $rateErrorFactory
@@ -58,6 +63,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      * @param \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory $rateMethodFactory
      * @param \Magento\Checkout\Model\Cart $cart
      * @param \Magento\CatalogInventory\Api\StockRegistryInterface $stockRepository
+     * @param \Magento\Store\Model\StoreManagerInterface $storeManagerInterface
      * @param array $data
      */
     public function __construct(
@@ -70,6 +76,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
         \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory $rateMethodFactory,
         \Magento\Checkout\Model\Cart $cart,
         \Magento\CatalogInventory\Api\StockRegistryInterface $stockRepository,
+        \Magento\Store\Model\StoreManagerInterface $storeManagerInterface,
         array $data = []
     ) {
         $this->_rateResultFactory = $rateResultFactory;
@@ -78,6 +85,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
         $this->_rateMethodFactory = $rateMethodFactory;
         $this->cart = $cart;
         $this->stockRepository = $stockRepository;
+        $this->storeManagerInterface = $storeManagerInterface;
         parent::__construct($scopeConfig, $rateErrorFactory, $logger, $data);
     }
 
@@ -105,7 +113,8 @@ class Shipping extends AbstractCarrier implements CarrierInterface
                 'status' => $response->shipment_methods[0]->isActive,
                 'price' => $response->shipment_methods[0]->price,
                 'stockCheck' => $response->shipment_methods[0]->stockCheck,
-                'deliveryText' => $response->shipment_methods[0]->deliveryText
+                'deliveryText' => $response->shipment_methods[0]->deliveryText,
+                'displayTo' => $response->shipment_methods[0]->displayTo
             ];
 
         } catch (\Exception $e) {
@@ -257,25 +266,30 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      */
     public function collectRates(RateRequest $request)
     {
+        $currentStore = $this->storeManagerInterface->getStore();
         $shipment = $this->trunkrsShippingMethod();
 
-        if(!isset($shipment['title']))
-        {
+        $storeCode = $currentStore->getCode();
+        if(!in_array($storeCode, $shipment['displayTo'])){
+            return false;
+        }
+
+        if(!isset($shipment['title'])){
             return false;
         }
 
         $shipAdd = $this->cart->getQuote();
         $selectedAdd = $shipAdd->getShippingAddress()->getCountry();
 
-        if (!$this->getConfigFlag('active')) {
+        if (!$this->getConfigFlag('active')){
             return false;
         }
 
-        if ($shipment['status'] !== 1) {
+        if ($shipment['status'] !== 1){
             return false;
         }
 
-        /*do not show trunkrs shipping if selected shipping country is not Netherlands */
+        /* do not show trunkrs shipping if selected shipping country is not Netherlands */
         if($selectedAdd != "NL"){
             return false;
         }
