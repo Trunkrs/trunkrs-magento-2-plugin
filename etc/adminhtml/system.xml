@@ -5,10 +5,10 @@
         <section id="carriers" translate="label" type="text" sortOrder="320" showInDefault="1" showInWebsite="1" showInStore="1">
             <group id="trunkrsShipping" translate="label" type="text" sortOrder="0" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Trunkrs Shipping</label>
-                <field id="version" translate="label" type="label" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="0" canRestore="0">
+                <field id="version" translate="label" type="label" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="0">
                     <label>Version</label>
                 </field>
-                <field id="v1" translate="label" type="label" sortOrder="2" showInDefault="1" showInWebsite="0" showInStore="0" canRestore="0">
+                <field id="v1" translate="label" type="label" sortOrder="2" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="0">
                     <frontend_model>Trunkrs\Carrier\Block\Adminhtml\System\Config\TrunkrsShipping</frontend_model>
                 </field>
                 <field id="trunkrs_token" translate="label" type="text" sortOrder="3" showInDefault="1" showInWebsite="1" showInStore="1">

@@ -33,30 +33,49 @@ class TrunkrsPortalEndpoint implements TrunkrsShippingInterface
   protected $response;
 
   /**
-  *constructor
-  * @param Data $helper
-  * @param \Magento\Config\Model\ResourceModel\Config $resourceConfig
-  * @param \Magento\Framework\Webapi\Rest\Response $response
+    * @var \Magento\Store\Model\StoreManagerInterface
+  */
+  protected $storeManagerInterface;
+
+  /**
+   * TrunkrsPortalEndpoint constructor.
+   * @param Data $helper
+   * @param \Magento\Framework\App\Request\Http $request
+   * @param \Magento\Config\Model\ResourceModel\Config $resourceConfig
+   * @param \Magento\Framework\Webapi\Rest\Response $response
+   * @param \Magento\Store\Model\StoreManagerInterface $storeManagerInterface
   */
   public function __construct(
     Data $helper,
     \Magento\Framework\App\Request\Http $request,
     \Magento\Config\Model\ResourceModel\Config $resourceConfig,
-    \Magento\Framework\Webapi\Rest\Response $response
+    \Magento\Framework\Webapi\Rest\Response $response,
+    \Magento\Store\Model\StoreManagerInterface $storeManagerInterface
   )
   {
     $this->helper = $helper;
     $this->resourceConfig = $resourceConfig;
     $this->request = $request;
     $this->response = $response;
+    $this->storeManagerInterface = $storeManagerInterface;
   }
 
   /**
    * Save endpoints to plugin core data
-   * @return String
+   * @return array
    */
   public function saveEndpoint()
   {
+    // fetch active store views
+    $stores = $this->storeManagerInterface->getStores();
+    foreach($stores as $store)
+    {
+      $storeViews[] = [
+          'code' => $store->getCode(),
+          'name' => $store->getName()
+      ];
+    }
+
     $token = $this->helper->getIntegrationToken();
     $magentoToken = $this->request->getHeader('magentoToken');
 
@@ -125,7 +144,7 @@ class TrunkrsPortalEndpoint implements TrunkrsShippingInterface
           0
         );
 
-        return \Zend_Json::encode(['Message' => __('Endpoint has been saved!')]);
+        return $storeViews;
       }
     }
   }
