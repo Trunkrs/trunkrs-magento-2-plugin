@@ -21,7 +21,7 @@ class InstallData implements InstallDataInterface
                 'scope' => 'default',
                 'scope_id' => 0,
                 'path' => 'carriers/trunkrsShipping/trunkrs_token',
-                'value' => md5('trunkrs'.microtime(true).mt_Rand())
+                'value' => md5('trunkrs' . microtime(true) . mt_Rand())
             ]
         );
 
