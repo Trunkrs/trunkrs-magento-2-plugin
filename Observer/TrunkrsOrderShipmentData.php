@@ -40,8 +40,7 @@ class TrunkrsOrderShipmentData implements ObserverInterface
         \Magento\Sales\Api\OrderRepositoryInterface $orderRepository,
         \Magento\Sales\Model\Convert\Order $convertOrder,
         \Magento\Sales\Api\Data\ShipmentTrackInterfaceFactory $trackFactory
-    )
-    {
+    ) {
         $this->helper = $helper;
         $this->orderRepository = $orderRepository;
         $this->convertOrder = $convertOrder;
@@ -66,8 +65,7 @@ class TrunkrsOrderShipmentData implements ObserverInterface
 
         // check whether an order can be ship or not
         if ($order->canShip()) {
-
-            if ($shippingName === Shipping::TRUNKRS_SHIPPING_METHOD){
+            if ($shippingName === Shipping::TRUNKRS_SHIPPING_METHOD) {
 
                 /**
                  * @return $receiverData
@@ -79,13 +77,12 @@ class TrunkrsOrderShipmentData implements ObserverInterface
                 $receiverTel = $shippingDetailsData->getTelephone();
                 $receiverEmail = $shippingDetailsData->getEmail();
                 $receiverPostCode = $shippingDetailsData->getPostcode();
-         
+
                 $orderShipment = $this->convertOrder->toShipment($order);
 
-                foreach ($order->getAllItems() AS $orderItem) {
+                foreach ($order->getAllItems() as $orderItem) {
                     // Check virtual item and item Quantity
-                    if (!$orderItem->getQtyToShip() || $orderItem->getIsVirtual()) 
-                    {
+                    if (!$orderItem->getQtyToShip() || $orderItem->getIsVirtual()) {
                         continue;
                     }
 
@@ -107,7 +104,7 @@ class TrunkrsOrderShipmentData implements ObserverInterface
                     // post shipment to Shipping portal
                     $urlHost = $this->helper->getShipmentEndpoint();
                     $client = new \GuzzleHttp\Client();
-                    $data = array(
+                    $data = [
                         "orderReference" => $orderReference,
                         "receiverName" => $receiverName,
                         "receiverEmail" => $receiverEmail,
@@ -116,7 +113,7 @@ class TrunkrsOrderShipmentData implements ObserverInterface
                         "receiverPostCode" => $receiverPostCode,
                         "receiverCity" => $receiverCity,
                         "receiverCountry" => $receiverCountry
-                    );
+                    ];
 
                     $response = $client->post($urlHost, ['json' => $data]);
                     $trackingInfo = \GuzzleHttp\json_decode($response->getBody());
@@ -130,10 +127,9 @@ class TrunkrsOrderShipmentData implements ObserverInterface
                         ->setShippingAddressId($trackingInfo->shipmentId)
                         ->setShippingLabel(base64_decode($trackingInfo->label));
                     $orderShipment->save();
-
                 } catch (\Exception $e) {
                     throw new \Magento\Framework\Exception\LocalizedException(
-                    __($e->getMessage())
+                        __($e->getMessage())
                     );
                 }
             }

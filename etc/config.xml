@@ -4,7 +4,7 @@
     <default>
         <carriers>
             <trunkrsShipping>
-                <version>1.4.0</version>
+                <version>1.4.1</version>
                 <model>Trunkrs\Carrier\Model\Carrier\Shipping</model>
             </trunkrsShipping>
         </carriers>
