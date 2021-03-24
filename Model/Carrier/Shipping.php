@@ -99,7 +99,9 @@ class Shipping extends AbstractCarrier implements CarrierInterface
             $client = new \GuzzleHttp\Client();
             $data = [
                 "trunkrs_token" => $this->getIntegrationToken(),
-                "price_total" => $this->getTotalOrderAmount()
+                "price_total" => $this->getTotalOrderAmount(),
+                "postal_code" => $this->getPostalCode(),
+                "country" => $this->getCountry()
             ];
 
             $request = $client->post($urlHost, ['json' => $data]);
@@ -156,6 +158,22 @@ class Shipping extends AbstractCarrier implements CarrierInterface
     public function getTotalOrderAmount()
     {
         return $this->cart->getQuote()->getGrandTotal();
+    }
+
+    /**
+     * @return mixed|string|null
+     */
+    public function getPostalCode()
+    {
+        return $this->cart->getQuote()->getShippingAddress()->getPostcode();
+    }
+
+    /**
+     * @return string
+     */
+    public function getCountry()
+    {
+        return $this->cart->getQuote()->getShippingAddress()->getCountry();
     }
 
     /**
@@ -248,7 +266,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
     {
         $stocks = $this->isInStock();
         foreach ($stocks as $itemInStock) {
-            if ($itemInStock===false) {
+            if ($itemInStock === false) {
                 return false;
             }
         }
@@ -315,7 +333,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
          */
         if ($shipment['stockCheck'] === 1) {
             /*check if any of the cart items has out of stock status(false)*/
-            if ($this->inStock()===false) {
+            if ($this->inStock() === false) {
                 return false;
             }
         }
