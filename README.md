@@ -35,9 +35,9 @@ composer require trunkrs/magento-2-carrier-plugin
 ```
 
 ```bash
-php bin/magento setup:upgrade  
-php bin/magento setup:static-content:deploy -f  
-php bin/magento cache:flush
+bin/magento setup:upgrade  
+bin/magento setup:static-content:deploy -f  
+bin/magento cache:flush
 ```  
 
 Done.
