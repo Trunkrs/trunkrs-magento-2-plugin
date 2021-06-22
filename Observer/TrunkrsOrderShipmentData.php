@@ -116,7 +116,7 @@ class TrunkrsOrderShipmentData implements ObserverInterface
                         "receiverName" => $receiverName,
                         "receiverEmail" => $receiverEmail,
                         "receiverTel" => $receiverTel,
-                        "receiverStreet" => $receiverStreet[0],
+                        "receiverStreet" => implode(' ',$receiverStreet),
                         "receiverPostCode" => $receiverPostCode,
                         "receiverCity" => $receiverCity,
                         "receiverCountry" => $receiverCountry
