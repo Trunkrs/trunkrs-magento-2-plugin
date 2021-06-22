@@ -3,7 +3,7 @@
         xsi:noNamespaceSchemaLocation="urn:magento:framework:Acl/etc/acl.xsd">
     <acl>
         <resources>
-            <resource id="Magento_Backend::admin">
+            <resource id="Magento_Backend::admin" title="Trunkrs">
                 <resource id="Trunkrs_Carrier::shipping" title="Trunkrs"
                           translate="title" sortOrder="900"/>
             </resource>

@@ -10,7 +10,7 @@ class TrunkrsOrderShipmentData implements ObserverInterface
 {
     /**
      * @param Data $helper
-    */
+     */
     public $helper;
 
     /**
@@ -29,6 +29,11 @@ class TrunkrsOrderShipmentData implements ObserverInterface
     protected $convertOrder;
 
     /**
+     * @var \Magento\Framework\Message\ManagerInterface
+     */
+    protected $messageManager;
+
+    /**
      * TrunkrsOrderShipmentData constructor.
      * @param Data $helper
      * @param \Magento\Sales\Api\OrderRepositoryInterface $orderRepository
@@ -37,12 +42,13 @@ class TrunkrsOrderShipmentData implements ObserverInterface
      */
     public function __construct(
         Data $helper,
+        \Magento\Framework\Message\ManagerInterface $messageManager,
         \Magento\Sales\Api\OrderRepositoryInterface $orderRepository,
         \Magento\Sales\Model\Convert\Order $convertOrder,
         \Magento\Sales\Api\Data\ShipmentTrackInterfaceFactory $trackFactory
-    )
-    {
+    ) {
         $this->helper = $helper;
+        $this->messageManager = $messageManager;
         $this->orderRepository = $orderRepository;
         $this->convertOrder = $convertOrder;
         $this->trackFactory = $trackFactory;
@@ -58,7 +64,7 @@ class TrunkrsOrderShipmentData implements ObserverInterface
     {
         $order = $observer->getEvent()->getOrder();
 
-        /** @var \Magento\Sales\Model\Order $order $shippingName ...*/
+        /** @var \Magento\Sales\Model\Order $order $shippingName ... */
         $shippingName = $order->getShippingMethod();
         $shippingTitle = $order->getShippingDescription();
         $shippingDetailsData = $order->getShippingAddress();
@@ -66,8 +72,7 @@ class TrunkrsOrderShipmentData implements ObserverInterface
 
         // check whether an order can be ship or not
         if ($order->canShip()) {
-
-            if ($shippingName === Shipping::TRUNKRS_SHIPPING_METHOD){
+            if ($shippingName === Shipping::TRUNKRS_SHIPPING_METHOD) {
 
                 /**
                  * @return $receiverData
@@ -79,13 +84,12 @@ class TrunkrsOrderShipmentData implements ObserverInterface
                 $receiverTel = $shippingDetailsData->getTelephone();
                 $receiverEmail = $shippingDetailsData->getEmail();
                 $receiverPostCode = $shippingDetailsData->getPostcode();
-         
+
                 $orderShipment = $this->convertOrder->toShipment($order);
 
-                foreach ($order->getAllItems() AS $orderItem) {
+                foreach ($order->getAllItems() as $orderItem) {
                     // Check virtual item and item Quantity
-                    if (!$orderItem->getQtyToShip() || $orderItem->getIsVirtual()) 
-                    {
+                    if (!$orderItem->getQtyToShip() || $orderItem->getIsVirtual()) {
                         continue;
                     }
 
@@ -107,7 +111,7 @@ class TrunkrsOrderShipmentData implements ObserverInterface
                     // post shipment to Shipping portal
                     $urlHost = $this->helper->getShipmentEndpoint();
                     $client = new \GuzzleHttp\Client();
-                    $data = array(
+                    $data = [
                         "orderReference" => $orderReference,
                         "receiverName" => $receiverName,
                         "receiverEmail" => $receiverEmail,
@@ -116,10 +120,14 @@ class TrunkrsOrderShipmentData implements ObserverInterface
                         "receiverPostCode" => $receiverPostCode,
                         "receiverCity" => $receiverCity,
                         "receiverCountry" => $receiverCountry
-                    );
+                    ];
 
                     $response = $client->post($urlHost, ['json' => $data]);
                     $trackingInfo = \GuzzleHttp\json_decode($response->getBody());
+
+                    if (!$trackingInfo->trunkrsNr) {
+                        return $this->messageManager->addErrorMessage("Error: Invalid Shipping data.");
+                    }
 
                     $track = $this->trackFactory->create();
                     $track->setCarrierCode(Shipping::CARRIER_CODE);
@@ -130,10 +138,9 @@ class TrunkrsOrderShipmentData implements ObserverInterface
                         ->setShippingAddressId($trackingInfo->shipmentId)
                         ->setShippingLabel(base64_decode($trackingInfo->label));
                     $orderShipment->save();
-
                 } catch (\Exception $e) {
                     throw new \Magento\Framework\Exception\LocalizedException(
-                    __($e->getMessage())
+                        __($e->getMessage())
                     );
                 }
             }

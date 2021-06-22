@@ -3,9 +3,9 @@
 namespace Trunkrs\Carrier\Model\Carrier;
 
 use Magento\Quote\Model\Quote\Address\RateRequest;
-use Magento\Shipping\Model\Rate\Result;
 use Magento\Shipping\Model\Carrier\AbstractCarrier;
 use Magento\Shipping\Model\Carrier\CarrierInterface;
+use Magento\Shipping\Model\Rate\Result;
 
 class Shipping extends AbstractCarrier implements CarrierInterface
 {
@@ -90,19 +90,19 @@ class Shipping extends AbstractCarrier implements CarrierInterface
     }
 
     /**
-     * @return array
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @return array|bool
      */
     public function trunkrsShippingMethod()
     {
-        try
-        {
+        try {
             $urlHost = $this->getShipmentMethodEndpoint();
             $client = new \GuzzleHttp\Client();
-            $data = array(
+            $data = [
                 "trunkrs_token" => $this->getIntegrationToken(),
-                "price_total" => $this->getTotalOrderAmount()
-            );
+                "price_total" => $this->getTotalOrderAmount(),
+                "postal_code" => $this->getPostalCode(),
+                "country" => $this->getCountry()
+            ];
 
             $request = $client->post($urlHost, ['json' => $data]);
             $response = json_decode($request->getBody()->getContents());
@@ -116,7 +116,6 @@ class Shipping extends AbstractCarrier implements CarrierInterface
                 'deliveryText' => $response->shipment_methods[0]->deliveryText,
                 'displayTo' => $response->shipment_methods[0]->displayTo
             ];
-
         } catch (\Exception $e) {
             return false;
         }
@@ -162,8 +161,23 @@ class Shipping extends AbstractCarrier implements CarrierInterface
     }
 
     /**
+     * @return mixed|string|null
+     */
+    public function getPostalCode()
+    {
+        return $this->cart->getQuote()->getShippingAddress()->getPostcode();
+    }
+
+    /**
+     * @return string
+     */
+    public function getCountry()
+    {
+        return $this->cart->getQuote()->getShippingAddress()->getCountry();
+    }
+
+    /**
      * @return array
-     * @throws \Magento\Framework\Exception\LocalizedException
      */
     public function getAllowedMethods()
     {
@@ -218,7 +232,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
     {
         $stock = $this->cart->getQuote()->getAllVisibleItems();
         $items = [];
-        foreach ($stock as $item){
+        foreach ($stock as $item) {
             $items[] = $item->getProductId();
         }
         return $items;
@@ -228,12 +242,12 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      * @return array
      * @throws \Magento\Framework\Exception\LocalizedException
      */
-    public function isInStock(){
-        try
-        {
+    public function isInStock()
+    {
+        try {
             $ids = $this->stockCheck();
             $items = [];
-            foreach ($ids as $id){
+            foreach ($ids as $id) {
                 $items[] = $this->stockRepository->getStockItem($id)->getIsInStock();
             }
             return $items;
@@ -252,7 +266,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
     {
         $stocks = $this->isInStock();
         foreach ($stocks as $itemInStock) {
-            if($itemInStock===false){
+            if ($itemInStock === false) {
                 return false;
             }
         }
@@ -269,28 +283,28 @@ class Shipping extends AbstractCarrier implements CarrierInterface
         $currentStore = $this->storeManagerInterface->getStore();
         $shipment = $this->trunkrsShippingMethod();
 
-        $storeCode = $currentStore->getCode();
-        if(!in_array($storeCode, $shipment['displayTo'])){
+        if (!isset($shipment['title'])) {
             return false;
         }
 
-        if(!isset($shipment['title'])){
+        $storeCode = $currentStore->getCode();
+        if (!in_array($storeCode, $shipment['displayTo'])) {
             return false;
         }
 
         $shipAdd = $this->cart->getQuote();
         $selectedAdd = $shipAdd->getShippingAddress()->getCountry();
 
-        if (!$this->getConfigFlag('active')){
+        if (!$this->getConfigFlag('active')) {
             return false;
         }
 
-        if ($shipment['status'] !== 1){
+        if ($shipment['status'] !== 1) {
             return false;
         }
 
         /* do not show trunkrs shipping if selected shipping country is not Netherlands */
-        if($selectedAdd != "NL"){
+        if ($selectedAdd != "NL") {
             return false;
         }
 
@@ -313,14 +327,13 @@ class Shipping extends AbstractCarrier implements CarrierInterface
 
         $result->append($method);
 
-
         /**
          * check whether the advanced option to hide shipping method when there
          * is product in the cart with an out of stock status — is set to Yes(1)
          */
-        if($shipment['stockCheck'] === 1){
+        if ($shipment['stockCheck'] === 1) {
             /*check if any of the cart items has out of stock status(false)*/
-            if($this->inStock()===false){
+            if ($this->inStock() === false) {
                 return false;
             }
         }
