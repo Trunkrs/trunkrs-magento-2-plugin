@@ -100,7 +100,6 @@ class TrunkrsOrderShipmentData implements ObserverInterface
                 }
 
                 $orderShipment->register();
-                $orderShipment->getOrder()->setIsInProcess(true);
 
                 try {
 
