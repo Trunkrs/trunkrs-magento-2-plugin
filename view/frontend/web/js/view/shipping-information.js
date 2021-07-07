@@ -4,7 +4,6 @@ define([
     'uiComponent',
     'Magento_Checkout/js/model/quote',
     'Magento_Checkout/js/model/step-navigator',
-    'mage/translate',
     'Magento_Checkout/js/model/sidebar'
 ], function ($, Component, quote, stepNavigator, sidebarModel) {
     'use strict';
