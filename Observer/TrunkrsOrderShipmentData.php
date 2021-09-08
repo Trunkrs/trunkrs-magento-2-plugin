@@ -38,7 +38,7 @@ class TrunkrsOrderShipmentData implements ObserverInterface
         Data $helper,
         \Magento\Framework\Message\ManagerInterface $messageManager,
         \Magento\Sales\Api\OrderRepositoryInterface $orderRepository,
-        \Magento\Sales\Model\Convert\Order $convertOrder,
+        \Magento\Sales\Model\Convert\Order $convertOrder
     ) {
         $this->helper = $helper;
         $this->messageManager = $messageManager;
