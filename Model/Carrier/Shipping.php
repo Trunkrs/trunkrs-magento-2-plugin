@@ -38,11 +38,6 @@ class Shipping extends AbstractCarrier implements CarrierInterface
     protected $_rateMethodFactory;
 
     /**
-     * @var \Magento\Checkout\Model\Cart
-     */
-    protected $cart;
-
-    /**
      * @var \Magento\CatalogInventory\Api\StockRegistryInterface
      */
     protected $stockRepository;
@@ -53,6 +48,11 @@ class Shipping extends AbstractCarrier implements CarrierInterface
     protected $storeManagerInterface;
 
     /**
+     * @var \Magento\Quote\Model\Quote\Address\RateRequest
+     */
+    protected $rateRequest;
+
+    /**
      * Shipping constructor.
      * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
      * @param \Magento\Quote\Model\Quote\Address\RateResult\ErrorFactory $rateErrorFactory
@@ -61,7 +61,6 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      * @param \Magento\Shipping\Model\Tracking\ResultFactory $trackFactory
      * @param \Magento\Shipping\Model\Tracking\Result\StatusFactory $statusFactory
      * @param \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory $rateMethodFactory
-     * @param \Magento\Checkout\Model\Cart $cart
      * @param \Magento\CatalogInventory\Api\StockRegistryInterface $stockRepository
      * @param \Magento\Store\Model\StoreManagerInterface $storeManagerInterface
      * @param array $data
@@ -74,7 +73,6 @@ class Shipping extends AbstractCarrier implements CarrierInterface
         \Magento\Shipping\Model\Tracking\ResultFactory $trackFactory,
         \Magento\Shipping\Model\Tracking\Result\StatusFactory $statusFactory,
         \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory $rateMethodFactory,
-        \Magento\Checkout\Model\Cart $cart,
         \Magento\CatalogInventory\Api\StockRegistryInterface $stockRepository,
         \Magento\Store\Model\StoreManagerInterface $storeManagerInterface,
         array $data = []
@@ -83,7 +81,6 @@ class Shipping extends AbstractCarrier implements CarrierInterface
         $this->_trackFactory = $trackFactory;
         $this->_statusFactory = $statusFactory;
         $this->_rateMethodFactory = $rateMethodFactory;
-        $this->cart = $cart;
         $this->stockRepository = $stockRepository;
         $this->storeManagerInterface = $storeManagerInterface;
         parent::__construct($scopeConfig, $rateErrorFactory, $logger, $data);
@@ -157,7 +154,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      */
     public function getTotalOrderAmount()
     {
-        return $this->cart->getQuote()->getGrandTotal();
+        return $this->rateRequest ? $this->rateRequest->getPackageValue() : null;
     }
 
     /**
@@ -165,7 +162,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      */
     public function getPostalCode()
     {
-        return $this->cart->getQuote()->getShippingAddress()->getPostcode();
+        return $this->rateRequest ? $this->rateRequest->getDestPostcode(): null;
     }
 
     /**
@@ -173,7 +170,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      */
     public function getCountry()
     {
-        return $this->cart->getQuote()->getShippingAddress()->getCountry();
+        return $this->rateRequest ? $this->rateRequest->getDestCountryId(): null;
     }
 
     /**
@@ -230,7 +227,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      */
     public function stockCheck()
     {
-        $stock = $this->cart->getQuote()->getAllVisibleItems();
+        $stock = $this->rateRequest->getAllItems();
         $items = [];
         foreach ($stock as $item) {
             $items[] = $item->getProductId();
@@ -280,6 +277,8 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      */
     public function collectRates(RateRequest $request)
     {
+        $this->rateRequest = $request;
+
         $currentStore = $this->storeManagerInterface->getStore();
         $shipment = $this->trunkrsShippingMethod();
 
@@ -292,9 +291,6 @@ class Shipping extends AbstractCarrier implements CarrierInterface
             return false;
         }
 
-        $shipAdd = $this->cart->getQuote();
-        $selectedAdd = $shipAdd->getShippingAddress()->getCountry();
-
         if (!$this->getConfigFlag('active')) {
             return false;
         }
@@ -304,7 +300,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
         }
 
         /* do not show trunkrs shipping if selected shipping country is not Netherlands */
-        if ($selectedAdd != "NL") {
+        if ($this->rateRequest->getDestCountryId() !== "NL") {
             return false;
         }
 
