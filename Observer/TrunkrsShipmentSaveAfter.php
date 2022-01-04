@@ -2,11 +2,18 @@
 
 namespace Trunkrs\Carrier\Observer;
 
+use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Trunkrs\Carrier\Helper\Data;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Message\ManagerInterface;
+use Magento\Framework\Registry;
+use Magento\Sales\Api\Data\ShipmentTrackInterfaceFactory;
+use Magento\Sales\Model\Order;
+use Psr\Log\LoggerInterface;
 use Trunkrs\Carrier\Model\Carrier\Shipping;
+use Trunkrs\Carrier\Helper\Data;
 
-class TrunkrsOrderShipmentData implements ObserverInterface
+class TrunkrsShipmentSaveAfter implements ObserverInterface
 {
     /**
      * @param Data $helper
@@ -14,69 +21,62 @@ class TrunkrsOrderShipmentData implements ObserverInterface
     public $helper;
 
     /**
+     * @var LoggerInterface
+     */
+    protected $logger;
+
+    /**
      * @var ShipmentTrackInterfaceFactory
      */
     private $trackFactory;
 
     /**
-     * @var \Magento\Sales\Api\OrderRepositoryInterface
-     */
-    protected $orderRepository;
-
-    /**
-     * @var \Magento\Sales\Model\Convert\Order
-     */
-    protected $convertOrder;
-
-    /**
-     * @var \Magento\Framework\Message\ManagerInterface
+     * @var ManagerInterface
      */
     protected $messageManager;
 
+    protected $registry;
+
     /**
-     * TrunkrsOrderShipmentData constructor.
      * @param Data $helper
-     * @param \Magento\Sales\Api\OrderRepositoryInterface $orderRepository
-     * @param \Magento\Sales\Model\Convert\Order $convertOrder
-     * @param \Magento\Sales\Api\Data\ShipmentTrackInterfaceFactory $trackFactory
+     * @param LoggerInterface $logger
+     * @param ManagerInterface $messageManager
+     * @param ShipmentTrackInterfaceFactory $trackFactory
+     * @param Registry $registry
      */
     public function __construct(
         Data $helper,
-        \Magento\Framework\Message\ManagerInterface $messageManager,
-        \Magento\Sales\Api\OrderRepositoryInterface $orderRepository,
-        \Magento\Sales\Model\Convert\Order $convertOrder,
-        \Magento\Sales\Api\Data\ShipmentTrackInterfaceFactory $trackFactory
+        LoggerInterface $logger,
+        ManagerInterface $messageManager,
+        ShipmentTrackInterfaceFactory $trackFactory,
+        Registry $registry
     ) {
         $this->helper = $helper;
+        $this->logger = $logger;
         $this->messageManager = $messageManager;
-        $this->orderRepository = $orderRepository;
-        $this->convertOrder = $convertOrder;
         $this->trackFactory = $trackFactory;
+        $this->registry = $registry;
     }
 
     /**
-     * Fetch order details after order is placed
-     * @param \Magento\Framework\Event\Observer $observer
-     * @return string|void
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @param Observer $observer
+     * @return ManagerInterface|void
+     * @throws LocalizedException
      */
-    public function execute(\Magento\Framework\Event\Observer $observer)
+    public function execute(Observer $observer)
     {
-        $order = $observer->getEvent()->getOrder();
+        $shipment = $observer->getEvent()->getShipment();
+        $order = $observer->getEvent()->getShipment()->getOrder();
 
-        /** @var \Magento\Sales\Model\Order $order $shippingName ... */
+        /** @var Order $order $shippingName ... */
         $shippingName = $order->getShippingMethod();
         $shippingTitle = $order->getShippingDescription();
         $shippingDetailsData = $order->getShippingAddress();
         $orderReference = $order->getIncrementId();
 
-        // check whether an order can be ship or not
-        if ($order->canShip()) {
+        if (!$this->registry->registry('hasShipped')) {
             if ($shippingName === Shipping::TRUNKRS_SHIPPING_METHOD) {
-
-                /**
-                 * @return $receiverData
-                 */
+                $this->registry->register('hasShipped', true);
                 $receiverStreet = $shippingDetailsData->getStreet();
                 $receiverName = $shippingDetailsData->getName();
                 $receiverCity = $shippingDetailsData->getCity();
@@ -85,28 +85,7 @@ class TrunkrsOrderShipmentData implements ObserverInterface
                 $receiverEmail = $shippingDetailsData->getEmail();
                 $receiverPostCode = $shippingDetailsData->getPostcode();
 
-                $orderShipment = $this->convertOrder->toShipment($order);
-
-                foreach ($order->getAllItems() as $orderItem) {
-                    // Check virtual item and item Quantity
-                    if (!$orderItem->getQtyToShip() || $orderItem->getIsVirtual()) {
-                        continue;
-                    }
-
-                    $qty = $orderItem->getQtyToShip();
-                    $shipmentItem = $this->convertOrder->itemToShipmentItem($orderItem)->setQty($qty);
-
-                    $orderShipment->addItem($shipmentItem);
-                }
-
-                $orderShipment->register();
-
                 try {
-
-                    // Save created Order Shipment
-                    $orderShipment->save();
-                    $orderShipment->getOrder()->save();
-
                     // post shipment to Shipping portal
                     $urlHost = $this->helper->getShipmentEndpoint();
                     $client = new \GuzzleHttp\Client();
@@ -133,12 +112,14 @@ class TrunkrsOrderShipmentData implements ObserverInterface
                     $track->setTitle($shippingTitle);
                     $track->setTrackNumber($trackingInfo->trunkrsNr);
 
-                    $orderShipment->addTrack($track)
+                    $shipment->addTrack($track)
                         ->setShippingAddressId($trackingInfo->shipmentId)
                         ->setShippingLabel(base64_decode($trackingInfo->label));
-                    $orderShipment->save();
+
+                    $shipment->save();
                 } catch (\Exception $e) {
-                    throw new \Magento\Framework\Exception\LocalizedException(
+                    $this->logger->critical('Error: '.$e->getMessage());
+                    throw new LocalizedException(
                         __($e->getMessage())
                     );
                 }
