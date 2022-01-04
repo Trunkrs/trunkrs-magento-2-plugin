@@ -70,7 +70,7 @@ class TrunkrsOrderShipmentData implements ObserverInterface
                  * @return $receiverData
                  */
                 $receiverStreet = $shippingDetailsData->getStreet();
-                $receiverName = $order->getCustomerName();
+                $receiverName = $shippingDetailsData->getName();
                 $receiverCity = $shippingDetailsData->getCity();
                 $receiverCountry = $shippingDetailsData->getCountryId();
                 $receiverTel = $shippingDetailsData->getTelephone();

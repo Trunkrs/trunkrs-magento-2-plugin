@@ -162,7 +162,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      */
     public function getPostalCode()
     {
-        return $this->rateRequest ? $this->rateRequest->getDestPostcode(): null;
+        return $this->rateRequest ? $this->rateRequest->getDestPostcode() : null;
     }
 
     /**
@@ -170,7 +170,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      */
     public function getCountry()
     {
-        return $this->rateRequest ? $this->rateRequest->getDestCountryId(): null;
+        return $this->rateRequest ? $this->rateRequest->getDestCountryId() : null;
     }
 
     /**
