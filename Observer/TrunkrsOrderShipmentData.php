@@ -14,11 +14,6 @@ class TrunkrsOrderShipmentData implements ObserverInterface
     public $helper;
 
     /**
-     * @var ShipmentTrackInterfaceFactory
-     */
-    private $trackFactory;
-
-    /**
      * @var \Magento\Sales\Api\OrderRepositoryInterface
      */
     protected $orderRepository;
@@ -38,20 +33,17 @@ class TrunkrsOrderShipmentData implements ObserverInterface
      * @param Data $helper
      * @param \Magento\Sales\Api\OrderRepositoryInterface $orderRepository
      * @param \Magento\Sales\Model\Convert\Order $convertOrder
-     * @param \Magento\Sales\Api\Data\ShipmentTrackInterfaceFactory $trackFactory
      */
     public function __construct(
         Data $helper,
         \Magento\Framework\Message\ManagerInterface $messageManager,
         \Magento\Sales\Api\OrderRepositoryInterface $orderRepository,
-        \Magento\Sales\Model\Convert\Order $convertOrder,
-        \Magento\Sales\Api\Data\ShipmentTrackInterfaceFactory $trackFactory
+        \Magento\Sales\Model\Convert\Order $convertOrder
     ) {
         $this->helper = $helper;
         $this->messageManager = $messageManager;
         $this->orderRepository = $orderRepository;
         $this->convertOrder = $convertOrder;
-        $this->trackFactory = $trackFactory;
     }
 
     /**
@@ -85,27 +77,7 @@ class TrunkrsOrderShipmentData implements ObserverInterface
                 $receiverEmail = $shippingDetailsData->getEmail();
                 $receiverPostCode = $shippingDetailsData->getPostcode();
 
-                $orderShipment = $this->convertOrder->toShipment($order);
-
-                foreach ($order->getAllItems() as $orderItem) {
-                    // Check virtual item and item Quantity
-                    if (!$orderItem->getQtyToShip() || $orderItem->getIsVirtual()) {
-                        continue;
-                    }
-
-                    $qty = $orderItem->getQtyToShip();
-                    $shipmentItem = $this->convertOrder->itemToShipmentItem($orderItem)->setQty($qty);
-
-                    $orderShipment->addItem($shipmentItem);
-                }
-
-                $orderShipment->register();
-
                 try {
-
-                    // Save created Order Shipment
-                    $orderShipment->save();
-                    $orderShipment->getOrder()->save();
 
                     // post shipment to Shipping portal
                     $urlHost = $this->helper->getShipmentEndpoint();
@@ -121,22 +93,7 @@ class TrunkrsOrderShipmentData implements ObserverInterface
                         "receiverCountry" => $receiverCountry
                     ];
 
-                    $response = $client->post($urlHost, ['json' => $data]);
-                    $trackingInfo = \GuzzleHttp\json_decode($response->getBody());
-
-                    if (!$trackingInfo->trunkrsNr) {
-                        return $this->messageManager->addErrorMessage("Error: Invalid Shipping data.");
-                    }
-
-                    $track = $this->trackFactory->create();
-                    $track->setCarrierCode(Shipping::CARRIER_CODE);
-                    $track->setTitle($shippingTitle);
-                    $track->setTrackNumber($trackingInfo->trunkrsNr);
-
-                    $orderShipment->addTrack($track)
-                        ->setShippingAddressId($trackingInfo->shipmentId)
-                        ->setShippingLabel(base64_decode($trackingInfo->label));
-                    $orderShipment->save();
+                    $client->post($urlHost, ['json' => $data]);
                 } catch (\Exception $e) {
                     throw new \Magento\Framework\Exception\LocalizedException(
                         __($e->getMessage())
