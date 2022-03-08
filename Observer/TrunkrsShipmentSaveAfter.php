@@ -10,7 +10,6 @@ use Magento\Framework\Registry;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Api\Data\ShipmentTrackInterfaceFactory;
 use Magento\Sales\Model\Order;
-use Magento\Sales\Model\Convert\Order;
 use Psr\Log\LoggerInterface;
 use Trunkrs\Carrier\Model\Carrier\Shipping;
 use Trunkrs\Carrier\Helper\Data;
@@ -48,7 +47,6 @@ class TrunkrsShipmentSaveAfter implements ObserverInterface
     /**
      * @param Data $helper
      * @param OrderRepositoryInterface $orderRepository
-     * @param Order $convertOrder
      * @param LoggerInterface $logger
      * @param ManagerInterface $messageManager
      * @param ShipmentTrackInterfaceFactory $trackFactory
@@ -66,7 +64,6 @@ class TrunkrsShipmentSaveAfter implements ObserverInterface
         $this->logger = $logger;
         $this->messageManager = $messageManager;
         $this->orderRepository = $orderRepository;
-        $this->convertOrder = $convertOrder;
         $this->trackFactory = $trackFactory;
         $this->registry = $registry;
     }
