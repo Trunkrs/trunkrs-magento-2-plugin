@@ -2,7 +2,7 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
     <type name="Magento\Checkout\Block\Checkout\LayoutProcessor">
-        <plugin name="checkout_trunkrs_shipping_fields" type="Trunkrs\Carrier\Plugin\Checkout\LayoutProcessorPlugin" sortOrder="10"/>
+        <plugin name="checkout_trunkrs_shipping_fields" type="Trunkrs\Carrier\Plugin\Checkout\LayoutProcessorPlugin" sortOrder="100"/>
     </type>
-    <preference for="Trunkrs\Carrier\Api\TrunkrsShippingInterface" type="Trunkrs\Carrier\Model\TrunkrsPortalEndpoint" />
+    <preference for="Trunkrs\Carrier\Api\TrunkrsShippingInterface" type="Trunkrs\Carrier\Model\TrunkrsIntegration" />
 </config>

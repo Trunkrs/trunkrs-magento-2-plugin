@@ -12,9 +12,9 @@ namespace Trunkrs\Carrier\Api;
 interface TrunkrsShippingInterface
 {
   /**
-   * Set Shipping Portal endpoint
+   * Set Trunkrs integration details
    *
-   * @return String
+   * @return void
    */
-  public function saveEndpoint();
+  public function saveDetails(): void;
 }

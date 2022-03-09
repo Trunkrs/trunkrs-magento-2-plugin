@@ -82,7 +82,7 @@ define(
 
            var shippingMethod = quote.shippingMethod().method_code+'_'+quote.shippingMethod().carrier_code;
 
-           if (this.source.get('trunkrsShippingMethodFields') && shippingMethod == "trunkrsShipping_trunkrsShipping") {
+           if (this.source.get('trunkrsShippingMethodFields') && shippingMethod === "trunkrsShipping_trunkrsShipping") {
                this.source.set('params.invalid', false);
                this.source.trigger('trunkrsShippingMethodFields.data.validate');
                if(this.source.get('params.invalid')) {

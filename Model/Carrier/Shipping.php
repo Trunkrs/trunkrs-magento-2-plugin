@@ -2,6 +2,7 @@
 
 namespace Trunkrs\Carrier\Model\Carrier;
 
+use GuzzleHttp\Client;
 use Magento\Quote\Model\Quote\Address\RateRequest;
 use Magento\Shipping\Model\Carrier\AbstractCarrier;
 use Magento\Shipping\Model\Carrier\CarrierInterface;
@@ -9,9 +10,8 @@ use Magento\Shipping\Model\Rate\Result;
 
 class Shipping extends AbstractCarrier implements CarrierInterface
 {
-    const TRUNKRS_SHIPPING_METHOD = 'trunkrsShipping_trunkrsShipping';
-    const CARRIER_CODE = 'trunkrsShipping';
-
+    const TRUNKRS = 'Trunkrs';
+    const TNT_BASE_URL = 'https://parcel.trunkrs.nl/';
     /**
      * @var string
      */
@@ -20,22 +20,12 @@ class Shipping extends AbstractCarrier implements CarrierInterface
     /**
      * @var \Magento\Shipping\Model\Rate\ResultFactory
      */
-    protected $_rateResultFactory;
-
-    /**
-     * @var \Magento\Shipping\Model\Tracking\ResultFactory
-     */
-    protected $_trackFactory;
-
-    /**
-     * @var \Magento\Shipping\Model\Tracking\Result\StatusFactory
-     */
-    protected $_statusFactory;
+    protected $rateResultFactory;
 
     /**
      * @var \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory
      */
-    protected $_rateMethodFactory;
+    protected $rateMethodFactory;
 
     /**
      * @var \Magento\CatalogInventory\Api\StockRegistryInterface
@@ -48,9 +38,24 @@ class Shipping extends AbstractCarrier implements CarrierInterface
     protected $storeManagerInterface;
 
     /**
+     * @var \Magento\Shipping\Model\Tracking\ResultFactory
+     */
+    protected $trackFactory;
+
+    /**
+     * @var \Magento\Shipping\Model\Tracking\Result\StatusFactory
+     */
+    protected $statusFactory;
+
+    /**
      * @var \Magento\Quote\Model\Quote\Address\RateRequest
      */
     protected $rateRequest;
+
+    /**
+     * @var \Magento\Checkout\Model\Cart
+     */
+    protected $cart;
 
     /**
      * Shipping constructor.
@@ -58,63 +63,67 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      * @param \Magento\Quote\Model\Quote\Address\RateResult\ErrorFactory $rateErrorFactory
      * @param \Psr\Log\LoggerInterface $logger
      * @param \Magento\Shipping\Model\Rate\ResultFactory $rateResultFactory
+     * @param \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory $rateMethodFactory
+     * @param \Magento\Store\Model\StoreManagerInterface $storeManagerInterface
      * @param \Magento\Shipping\Model\Tracking\ResultFactory $trackFactory
      * @param \Magento\Shipping\Model\Tracking\Result\StatusFactory $statusFactory
-     * @param \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory $rateMethodFactory
-     * @param \Magento\CatalogInventory\Api\StockRegistryInterface $stockRepository
-     * @param \Magento\Store\Model\StoreManagerInterface $storeManagerInterface
+     * @param \Magento\Checkout\Model\Cart $cart
      * @param array $data
      */
     public function __construct(
-        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
-        \Magento\Quote\Model\Quote\Address\RateResult\ErrorFactory $rateErrorFactory,
-        \Psr\Log\LoggerInterface $logger,
-        \Magento\Shipping\Model\Rate\ResultFactory $rateResultFactory,
-        \Magento\Shipping\Model\Tracking\ResultFactory $trackFactory,
-        \Magento\Shipping\Model\Tracking\Result\StatusFactory $statusFactory,
+        \Magento\Framework\App\Config\ScopeConfigInterface          $scopeConfig,
+        \Magento\Quote\Model\Quote\Address\RateResult\ErrorFactory  $rateErrorFactory,
+        \Psr\Log\LoggerInterface                                    $logger,
+        \Magento\Shipping\Model\Rate\ResultFactory                  $rateResultFactory,
         \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory $rateMethodFactory,
-        \Magento\CatalogInventory\Api\StockRegistryInterface $stockRepository,
-        \Magento\Store\Model\StoreManagerInterface $storeManagerInterface,
-        array $data = []
-    ) {
-        $this->_rateResultFactory = $rateResultFactory;
-        $this->_trackFactory = $trackFactory;
-        $this->_statusFactory = $statusFactory;
-        $this->_rateMethodFactory = $rateMethodFactory;
-        $this->stockRepository = $stockRepository;
+        \Magento\Store\Model\StoreManagerInterface                  $storeManagerInterface,
+        \Magento\Shipping\Model\Tracking\ResultFactory              $trackFactory,
+        \Magento\Shipping\Model\Tracking\Result\StatusFactory       $statusFactory,
+        \Magento\Checkout\Model\Cart                                $cart,
+        array                                                       $data = []
+    )
+    {
+        $this->rateResultFactory = $rateResultFactory;
+        $this->rateMethodFactory = $rateMethodFactory;
         $this->storeManagerInterface = $storeManagerInterface;
+        $this->trackFactory = $trackFactory;
+        $this->statusFactory = $statusFactory;
+        $this->cart = $cart;
         parent::__construct($scopeConfig, $rateErrorFactory, $logger, $data);
     }
 
     /**
-     * @return array|bool
+     * get shipping method details
+     * @return array|null
      */
-    public function trunkrsShippingMethod()
+    public function getTrunkrsShippingMethod()
     {
         try {
-            $urlHost = $this->getShipmentMethodEndpoint();
-            $client = new \GuzzleHttp\Client();
-            $data = [
-                "trunkrs_token" => $this->getIntegrationToken(),
-                "price_total" => $this->getTotalOrderAmount(),
-                "postal_code" => $this->getPostalCode(),
-                "country" => $this->getCountry()
-            ];
+            $country = $this->getCountry();
+            $totalAmount = $this->getTotalOrderAmount();
 
-            $request = $client->post($urlHost, ['json' => $data]);
+            $urlHost = $this->getShipmentMethodEndpoint();
+            $client = new Client();
+
+            $request = $client->get(
+                $urlHost . "?country=" . $country . "&orderValue=" . $totalAmount, [
+                'headers' => [
+                    'Authorization' => sprintf('Bearer %s', $this->getAccessToken()),
+                    'Content-Type' => 'application/json; charset=utf-8'
+                ]
+            ]);
+
             $response = json_decode($request->getBody()->getContents());
 
             return [
-                'title' => $response->shipment_methods[0]->title,
-                'name' => $response->shipment_methods[0]->name,
-                'status' => $response->shipment_methods[0]->isActive,
-                'price' => $response->shipment_methods[0]->price,
-                'stockCheck' => $response->shipment_methods[0]->stockCheck,
-                'deliveryText' => $response->shipment_methods[0]->deliveryText,
-                'displayTo' => $response->shipment_methods[0]->displayTo
+                'title' => 'Trunkrs',
+                'name' => 'Same and next day delivery',
+                'price' => $response[0]->price,
+                'announceBefore' => $response[0]->announceBefore,
+                'deliveryDate' => $response[0]->deliveryWindowClose,
             ];
-        } catch (\Exception $e) {
-            return false;
+        } catch (\Throwable $e) {
+            return null;
         }
     }
 
@@ -124,15 +133,13 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      */
     public function getTrackingInfo($trackingId)
     {
-        $shipment = $this->trunkrsShippingMethod();
-
-        $result = $this->_trackFactory->create();
-        $tracking = $this->_statusFactory->create();
+        $result = $this->trackFactory->create();
+        $tracking = $this->statusFactory->create();
 
         $tracking->setCarrier($this->_code);
-        $tracking->setCarrierTitle($shipment['title']);
+        $tracking->setCarrierTitle(self::TRUNKRS);
         $tracking->setTracking($trackingId);
-        $tracking->setUrl('https://parcel.trunkrs.nl/');
+        $tracking->setUrl(self::TNT_BASE_URL);
 
         $result->append($tracking);
         return $tracking;
@@ -149,28 +156,48 @@ class Shipping extends AbstractCarrier implements CarrierInterface
     }
 
     /**
-     * get Grand Total for variable pricing
-     * @return float
-     */
-    public function getTotalOrderAmount()
-    {
-        return $this->rateRequest ? $this->rateRequest->getPackageValue() : null;
-    }
-
-    /**
-     * @return mixed|string|null
-     */
-    public function getPostalCode()
-    {
-        return $this->rateRequest ? $this->rateRequest->getDestPostcode() : null;
-    }
-
-    /**
+     * Retrieves customer country
      * @return string
      */
     public function getCountry()
     {
-        return $this->rateRequest ? $this->rateRequest->getDestCountryId() : null;
+        return $this->cart->getQuote()->getShippingAddress()->getCountry();
+    }
+
+    /**
+     * Retrieves customer postcode
+     * @return string
+     */
+    public function getPostalCode()
+    {
+        return $this->cart->getQuote()->getShippingAddress()->getPostcode();
+    }
+
+    /**
+     * Get Grand Total for variable pricing
+     * @return float
+     */
+    public function getTotalOrderAmount()
+    {
+        return $this->cart->getQuote()->getGrandTotal();
+    }
+
+    /**
+     * Retrieves shipping method endpoint
+     * @return string
+     */
+    public function getShipmentMethodEndpoint()
+    {
+        return $this->getConfigData('shipment_method_endpoint');
+    }
+
+    /**
+     * Retrieves the access token
+     * @return string The access token
+     */
+    public function getAccessToken()
+    {
+        return $this->getConfigData('access_token');
     }
 
     /**
@@ -178,96 +205,8 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      */
     public function getAllowedMethods()
     {
-        $shipment = $this->trunkrsShippingMethod();
+        $shipment = $this->getTrunkrsShippingMethod();
         return [$this->_code => $shipment['title']];
-    }
-
-    /**
-     * getIntegrationToken
-     * @return string
-     */
-    public function getIntegrationToken()
-    {
-        $token = $this->getConfigData('trunkrs_token');
-        return $token;
-    }
-
-    /**
-     * get Shipping endpoint
-     * @return string
-     */
-    public function getShipmentEndpoint()
-    {
-        $endpoint = $this->getConfigData('portal_shipment');
-        return $endpoint;
-    }
-
-    /**
-     * get Cancel shipment endpoint
-     * @return string
-     */
-    public function getCancelShipmentEndpoint()
-    {
-        $endpoint = $this->getConfigData('portal_cancel_shipment');
-        return $endpoint;
-    }
-
-    /**
-     * get Shipment method endpoint
-     * @return string
-     */
-    public function getShipmentMethodEndpoint()
-    {
-        $endpoint = $this->getConfigData('portal_shipment_method');
-        return $endpoint;
-    }
-
-    /**
-     * @return array
-     */
-    public function stockCheck()
-    {
-        $stock = $this->rateRequest->getAllItems();
-        $items = [];
-        foreach ($stock as $item) {
-            $items[] = $item->getProductId();
-        }
-        return $items;
-    }
-
-    /**
-     * @return array
-     * @throws \Magento\Framework\Exception\LocalizedException
-     */
-    public function isInStock()
-    {
-        try {
-            $ids = $this->stockCheck();
-            $items = [];
-            foreach ($ids as $id) {
-                $items[] = $this->stockRepository->getStockItem($id)->getIsInStock();
-            }
-            return $items;
-        } catch (\Exception $e) {
-            throw new \Magento\Framework\Exception\LocalizedException(
-                __($e->getMessage())
-            );
-        }
-    }
-
-    /**
-     * @return bool
-     * @throws \Magento\Framework\Exception\LocalizedException
-     */
-    public function inStock()
-    {
-        $stocks = $this->isInStock();
-        foreach ($stocks as $itemInStock) {
-            if ($itemInStock === false) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**
@@ -279,42 +218,30 @@ class Shipping extends AbstractCarrier implements CarrierInterface
     {
         $this->rateRequest = $request;
 
-        $currentStore = $this->storeManagerInterface->getStore();
-        $shipment = $this->trunkrsShippingMethod();
-
-        if (!isset($shipment['title'])) {
-            return false;
-        }
-
-        $storeCode = $currentStore->getCode();
-        if (!in_array($storeCode, $shipment['displayTo'])) {
-            return false;
-        }
-
-        if (!$this->getConfigFlag('active')) {
-            return false;
-        }
-
-        if ($shipment['status'] !== 1) {
+        if (!$this->getIsConfigured()) {
             return false;
         }
 
         /* do not show trunkrs shipping if selected shipping country is not Netherlands */
-        if ($this->rateRequest->getDestCountryId() !== "NL") {
+        if ($this->getCountry() !== "NL") {
+            return false;
+        }
+
+        $shipment = $this->getTrunkrsShippingMethod();
+        if (!isset($shipment['title'])) {
             return false;
         }
 
         /** @var \Magento\Shipping\Model\Rate\Result $result */
-        $result = $this->_rateResultFactory->create();
+        $result = $this->rateResultFactory->create();
 
         /** @var \Magento\Quote\Model\Quote\Address\RateResult\Method $method */
-        $method = $this->_rateMethodFactory->create();
+        $method = $this->rateMethodFactory->create();
 
         $method->setCarrier($this->_code);
         $method->setCarrierTitle($shipment['name']);
 
         $method->setMethod($this->_code);
-
         $method->setMethodTitle($shipment['title']);
         $amount = $shipment['price'];
 
@@ -323,17 +250,15 @@ class Shipping extends AbstractCarrier implements CarrierInterface
 
         $result->append($method);
 
-        /**
-         * check whether the advanced option to hide shipping method when there
-         * is product in the cart with an out of stock status — is set to Yes(1)
-         */
-        if ($shipment['stockCheck'] === 1) {
-            /*check if any of the cart items has out of stock status(false)*/
-            if ($this->inStock() === false) {
-                return false;
-            }
-        }
-
         return $result;
+    }
+
+    /**
+     * Reflects whether the plugin has been configured.
+     * @return bool Value reflecting config status
+     */
+    public function getIsConfigured()
+    {
+        return !($this->getConfigData('is_configured') !== '1');
     }
 }

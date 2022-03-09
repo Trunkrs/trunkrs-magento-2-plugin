@@ -5,7 +5,7 @@
         <resources>
             <resource id="Magento_Backend::admin" title="Trunkrs">
                 <resource id="Trunkrs_Carrier::shipping" title="Trunkrs"
-                          translate="title" sortOrder="900"/>
+                          translate="title" sortOrder="0"/>
             </resource>
         </resources>
     </acl>
