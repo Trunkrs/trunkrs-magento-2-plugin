@@ -4,38 +4,34 @@
  * See LICENSE.txt for license details.
  */
 
-/* @var $block \Trunkrs\Carrier\Block\Adminhtml\System\Config\TimeRange */
+/* @var $block TrunkrsShipping */
 
-echo
-    "
-    <p class='trunkrs-token' data-toggle='clickToken' title='Click to Copy!'>"
-        .$this->helper('Trunkrs\Carrier\Helper\Data')->getIntegrationToken().
-    "
-    </p>
-    <p id='copy-msg'>
-     Click the above token to copy.
-    </p>";
+use Trunkrs\Carrier\Block\Adminhtml\System\Config\TrunkrsShipping;
+
+echo "<div id='trunkrs-app'></div>";
 ?>
 <script>
     require([
-        'jquery',
-        'jquery/ui'
-    ], function($){
-        $(document).ready(function(){
-            function copyToClipboard(element) {
-                var $temp = $("<input>");
-                $("body").append($temp);
-                $temp.val($(element).text().trim()).select();
-                document.execCommand("copy");
-                $temp.remove();
-            }
-
-            $('[data-toggle="clickToken"]').tooltip();
-
-            $(".trunkrs-token").click(function() {
-                copyToClipboard($(this))
-                $('#copy-msg').text('Token copied!')
-            });
-        })
+        'react-app',
+    ], function () {
+        console.log('Trunkrs assets loaded!')
     });
+</script>
+<script id=<?php echo "__". $block::TRUNKRS_MAGE_SETTINGS ."__"; ?> type="application/json">
+    <?php
+    echo json_encode([
+        'isConfigured' => $block->getIsConfigured(),
+        'accessToken' => $block->getAccessToken(),
+        'baseUrl' => $block->getBaseUrl(),
+        'domainName' => parse_url($block->getBaseUrl())['host'],
+        'details' => json_decode($block->getIntegrationDetails()),
+        'magentoToken' => $block->getMagentoToken(),
+        'metaBag' => [
+            'magentoVersion' => $block->getMagentoVersion(),
+            'browserInfo' => $_SERVER['HTTP_USER_AGENT'],
+            'phpVersion' => phpversion(),
+            'phpExtensions' => get_loaded_extensions(),
+        ]
+    ]);
+    ?>
 </script>

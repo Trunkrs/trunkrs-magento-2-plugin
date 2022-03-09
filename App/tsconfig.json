@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "isolatedModules": true,
+    "noEmit": false
+  },
+  "include": [
+    ".eslintrc.js",
+    ".prettierrc.js",
+    "webpack.config.js",
+    "**/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

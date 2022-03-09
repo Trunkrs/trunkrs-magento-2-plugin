@@ -1,0 +1,43 @@
+.tr-mage-switchContainer {
+  display: flex;
+  align-items: center;
+
+  .tr-mage-switch {
+    position: relative;
+    width: 48px;
+    height: 24px;
+    background-color: #E0E0E0;
+    border-radius: 16px;
+    cursor: pointer;
+
+    &.tr-mage-switch-checked {
+      background-color: #8000FF;
+
+      .tr-mage-switchKnob {
+        left: 24px;
+        border-color: #8000FF;
+      }
+    }
+
+    .tr-mage-switchKnob {
+      position: absolute;
+      display: block;
+      left: 0;
+      width: 24px;
+      height: 24px;
+      border: 2px solid #CCCCCC;
+      border-radius: 50%;
+      background-color: #fff;
+      box-sizing: border-box;
+    }
+  }
+
+  .tr-mage-switch,
+  .tr-mage-switchKnob {
+    transition: background-color 250ms ease-out, border-color 250ms ease-out, left 175ms ease-out;
+  }
+
+  .tr-mage-switchContent {
+    margin-left: 8px;
+  }
+}

@@ -1,0 +1,77 @@
+.tr-mage-button {
+  display: flex;
+  align-items: center;
+  height: 50px;
+  padding: 14px 32px;
+  font-size: 16px;
+  box-shadow: 0 0 1px rgb(34 12 74 / 12%), 0 1px 1px rgb(34 12 74 / 12%), 0 2px 4px rgb(34 12 74 / 8%);
+  border: none;
+  border-radius: 4px;
+  appearance: none;
+  cursor: pointer;
+  transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,border 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+  color: #220C4A;
+  box-sizing: border-box;
+  text-decoration: none !important;
+  outline: none !important;
+
+  &:hover {
+    color: #220C4A;
+    box-shadow: 0 2px 4px -1px rgb(0 0 0 / 20%), 0px 4px 5px 0 rgb(0 0 0 / 14%), 0 1px 10px 0 rgb(0 0 0 / 12%);
+  }
+
+  &:disabled {
+    box-shadow: none;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  &.tr-mage-white {
+    background-color: white;
+
+    &:disabled {
+      background-color: #E0E0E0;
+    }
+
+    &:hover {
+      background-color: #F5F5F5;
+    }
+  }
+
+  &.tr-mage-indigo {
+    background-color: #220C4A;
+    color: #fff;
+
+     &:disabled {
+      background-color: #E0E0E0;
+     }
+
+     &:hover {
+      background-color: #1f054d;
+     }
+  }
+
+  &.tr-mage-blue {
+    background-color: #13D2FC;
+
+    &:disabled {
+      background-color: #C4F4FE;
+    }
+
+    &:hover {
+      background-color: #03B3D9;
+    }
+  }
+
+  &.tr-mage-green {
+    background-color: #2CE27E;
+
+    &:disabled {
+      background-color: #CAF8DF;
+    }
+
+    &:hover {
+      background-color: #1AC165;
+    }
+  }
+}

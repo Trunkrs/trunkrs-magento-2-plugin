@@ -1,5 +1,3 @@
-
-
 define([
     'uiComponent',
     'Magento_Customer/js/customer-data'
@@ -18,7 +16,7 @@ define([
          * @return {String}
          */
         getCountryName: function (countryId) {
-            return countryData()[countryId] != undefined ? countryData()[countryId].name : ''; //eslint-disable-line
+            return countryData()[countryId] !== undefined ? countryData()[countryId].name : '';
         }
     });
 });

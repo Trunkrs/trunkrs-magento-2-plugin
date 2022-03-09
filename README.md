@@ -10,22 +10,12 @@
 ## Trunkrs Shipping Method Plugin for Magento 2
 
 The official Trunkrs Shipping method plugin for Magento 2. 
-This plugin allows you to integrate your Magento 2 webshop to [Trunkrs Shipping Portal](https://lightspeed.trunkrs.app/) and start managing your shipments.
-
-## WHAT IS REQUIRED?
-
-A client can install and use the plugin using API credentials for authentication. The API is protected by static header values in the form of:
-
-A **client ID** provided by the header **X-API-ClientID**  
-A **client secret** provided by the header **X-API-ClientSecret**
-
-The clientId and secret combination identifies a client as an authorized client and gives them access to their client-specific records.
-To obtain a clientId and secret, please contact Trunkrs at **sales@trunkrs.nl**
+This plugin allows you to integrate your Magento 2 webshop to [Trunkrs Shipping Portal](https://portal.trunkrs.app/) and start managing your shipments.
 
 ## TECHNICAL INFORMATION
 
 Compatible with Magento 2.3.0 CE or later  
-PHP Version 7.1.24 or later
+PHP Version 7.3 or later
 
 ## INSTALLATION
 
@@ -41,10 +31,6 @@ bin/magento cache:flush
 ```  
 
 Done.
-
-## WORKING WITH THE PLUGIN
-
-[click here...](https://trunkrs.atlassian.net/wiki/spaces/CUS/pages/55836676/Magento+2+Plugin+integration+manual#WORKING-WITH-OUR-MAGENTO-2-PLUGIN)
 
 ## License
 The Trunkrs Shipping method plugin for Magento 2 is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).

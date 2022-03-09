@@ -1,0 +1,87 @@
+.tr-mage-detailsPanel {
+  display: flex;
+  flex-direction: column;
+  width: 700px;
+  margin-bottom: 32px;
+
+  .tr-mage-panelHeader {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    padding: 16px 24px;
+    border-bottom: 1px solid rgb(226, 228, 231);
+
+    & > p {
+      margin: 0;
+      font-size: 14px;
+        font-weight: bold;
+    }
+  }
+
+  .tr-mage-panelContent,
+  .tr-mage-panelFooter {
+    padding: 16px 24px;
+  }
+
+  .tr-mage-panelContent {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex: 1;
+
+    &.tr-mage-extraPanel {
+      border-top: 1px solid rgb(226, 228, 231);
+    }
+
+    .tr-mage-detailsPanel-connected {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+
+      span {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .tr-mage-checkVector {
+        width: 32px;
+        margin-right: 16px;
+      }
+
+      h3 {
+        margin: 0;
+      }
+    }
+
+    h4 {
+      &.tr-mage-switchLabel {
+        margin: 0;
+      }
+
+        padding-left: 0 !important;
+        margin-bottom: 4px;
+    }
+
+    p {
+      margin: 0;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  .tr-mage-panelFooter {
+    display: flex;
+    justify-content: flex-end;
+    border-top: 1px solid rgb(226, 228, 231);
+    padding: 24px;
+    padding-top: 32px !important;
+
+    .tr-mage-buttonVector {
+      width: 16px;
+      margin-right: 8px;
+      margin-top: 1px;
+    }
+  }
+}

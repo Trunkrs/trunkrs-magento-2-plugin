@@ -4,22 +4,20 @@ namespace Trunkrs\Carrier\Observer;
 
 use Magento\Framework\Event\ObserverInterface;
 use Trunkrs\Carrier\Helper\Data;
-use Trunkrs\Carrier\Model\Carrier\Shipping;
 
 class TrunkrsCancelShipment implements ObserverInterface
 {
+    const TRUNKRS_CARRIER_CODE = 'trunkrsShipping_trunkrsShipping';
     /**
      * @param Data $helper
-    */
+     */
     public $helper;
 
     /**
      * TrunkrsCancelShipment constructor.
      * @param Data $helper
      */
-    public function __construct(
-        Data $helper
-    )
+    public function __construct(Data $helper)
     {
         $this->helper = $helper;
     }
@@ -32,23 +30,28 @@ class TrunkrsCancelShipment implements ObserverInterface
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
         $order = $observer->getEvent()->getOrder();
-
-        $orderReference = $order->getIncrementId();
+        $tracksCollection = $order->getTracksCollection();
         $shippingName = $order->getShippingMethod();
 
-        if($shippingName === Shipping::TRUNKRS_SHIPPING_METHOD)
+        $trunkrsNumber = '';
+        foreach ($tracksCollection->getItems() as $track) {
+            $trunkrsNumber = $track->getTrackNumber();
+            break;
+        }
+
+        if($shippingName === self::TRUNKRS_CARRIER_CODE)
         {
-            //post shipment to Shipping portal
             try
             {
                 $urlHost = $this->helper->getCancelShipmentEndpoint();
                 $client = new \GuzzleHttp\Client();
-                $data = array(
-                    "orderReference" => $orderReference
-                );
 
-                $request = $client->post($urlHost, ['json' => $data]);
-                
+                $client->delete($urlHost . '/' . $trunkrsNumber,[
+                    'headers' => [
+                        'Authorization' => sprintf('Bearer %s', $this->helper->getAccessToken()),
+                        'Content-Type' => 'application/json; charset=utf-8'],
+                ]);
+
             } catch (\Exception $e) {
                 return $e->getMessage();
             }

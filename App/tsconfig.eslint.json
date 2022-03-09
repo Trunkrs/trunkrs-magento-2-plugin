@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.base.json",
+  "include": [
+    ".eslintrc.js",
+    ".prettierrc.js",
+    "webpack.config.js",
+    "**/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
