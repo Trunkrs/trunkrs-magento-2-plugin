@@ -61,7 +61,7 @@ class InstallData implements InstallDataInterface
                 'scope' => 'default',
                 'scope_id' => 0,
                 'path' => 'carriers/trunkrsShipping/shipment_method_endpoint',
-                'value' => 'https://staging.shipping.trunkrs.app/v1/shipping-rates' // for staging purpose
+                'value' => 'https://shipping.trunkrs.app/v1/shipping-rates'
             ]
         );
 
@@ -71,7 +71,7 @@ class InstallData implements InstallDataInterface
                 'scope' => 'default',
                 'scope_id' => 0,
                 'path' => 'carriers/trunkrsShipping/shipping_endpoint',
-                'value' => 'https://staging.shipping.trunkrs.app/v1/shipments' // for staging purpose
+                'value' => 'https://shipping.trunkrs.app/v1/shipments'
             ]
         );
 
