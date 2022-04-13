@@ -222,8 +222,8 @@ class Shipping extends AbstractCarrier implements CarrierInterface
             return false;
         }
 
-        /* do not show trunkrs shipping if selected shipping country is not Netherlands */
-        if ($this->getCountry() !== "NL") {
+        /* do not show trunkrs shipping if selected shipping country is not NL|BE */
+        if ($this->getCountry() !== "NL" && $this->getCountry() !== "BE") {
             return false;
         }
 

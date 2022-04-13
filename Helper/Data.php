@@ -168,10 +168,13 @@ class Data extends AbstractHelper
 
                 $deliveryDesc = $diffDays === 1
                     ? 'morgen'
-                    : 'op' . ' ' . date('D dS', $parsedDeliveryDate->getTimestamp() + $parsedDeliveryDate->getOffset());
+                    : 'op' . ' ' . date('l', $parsedDeliveryDate->getTimestamp() + $parsedDeliveryDate->getOffset());
+
+                $hourMinutes = $diffDays === 1 ?  'morgen ' . date('H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset()) :
+                    date('l H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset());
 
                 $description = sprintf("Plaats je bestelling voor %s om het %s te ontvangen!",
-                    date('D dS H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset()),
+                    $hourMinutes,
                     $deliveryDesc
                 );
                 break;
