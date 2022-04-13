@@ -1,11 +1,11 @@
-
 define([
     'jquery',
     'uiComponent',
     'Magento_Checkout/js/model/quote',
     'Magento_Checkout/js/model/step-navigator',
-    'Magento_Checkout/js/model/sidebar'
-], function ($, Component, quote, stepNavigator, sidebarModel) {
+    'Magento_Checkout/js/model/sidebar',
+    'Magento_Catalog/js/price-utils'
+], function ($, Component, quote, stepNavigator, sidebarModel, priceUtils) {
     'use strict';
 
     return Component.extend({
@@ -25,9 +25,10 @@ define([
          */
         getShippingMethodTitle: function () {
             var shippingMethod = quote.shippingMethod();
-
-            return shippingMethod ? shippingMethod['carrier_title'] + ' - ' + shippingMethod['method_title'] : '';
+            return shippingMethod ? shippingMethod['method_title'] === 'Trunkrs' ? shippingMethod['method_title'] + ' - ' + this.getShippingPrice() :
+                shippingMethod['carrier_title'] + ' - ' + shippingMethod['method_title'] : '';
         },
+
         /**
          * @return {String}
          */
@@ -39,6 +40,16 @@ define([
 
             }
             return trunkrs_delivery_time ? trunkrs_delivery_time : '';
+        },
+
+        /**
+         * @return {String}
+         */
+        getShippingPrice: function () {
+            var price;
+            price = quote.totals()['shipping_amount'];
+
+            return priceUtils.formatPrice(price, quote.getPriceFormat());
         },
 
         /**
