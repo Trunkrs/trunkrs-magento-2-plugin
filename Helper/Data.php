@@ -101,7 +101,7 @@ class Data extends AbstractHelper
         return $this->getConfigData('integration_details') ?? null;
     }
 
-    private static function getRateType(string $deliveryDate): string
+    public static function getRateType(string $deliveryDate): string
     {
         $todayString = date('Y-m-d');
         return $todayString === $deliveryDate ? 'same' : 'next';
@@ -144,42 +144,51 @@ class Data extends AbstractHelper
     /**
      * @return string
      */
-    public function getDeliveryText(): string
+    public function getShippingDescription()
     {
-        $trunkrsObj = $this->trunkrs->getTrunkrsShippingMethod();
-        $deliveryTimestamp = self::parse8601($trunkrsObj['deliveryDate'])->getTimestamp();
-        $deliveryDate = date('Y-m-d', $deliveryTimestamp);
-        $parsedDeliveryDate = self::parse8601Date($deliveryDate);
-        $cutOffTime =  self::parse8601($trunkrsObj['announceBefore']);
-
-        $type = self::getRateType($deliveryDate);
-
-        $description = null;
-        switch ($type) {
-            case 'same';
-                $description = sprintf("Plaats je bestelling voor %s om het vandaag te ontvangen!",
-                    date('H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset()));
-                break;
-
-            case 'next':
-                $today = new DateTime("today");
-                $diff = $today->diff($parsedDeliveryDate);
-                $diffDays = (integer)$diff->format("%R%a");
-
-                $deliveryDesc = $diffDays === 1
-                    ? 'morgen'
-                    : 'op' . ' ' . date('l', $parsedDeliveryDate->getTimestamp() + $parsedDeliveryDate->getOffset());
-
-                $hourMinutes = $diffDays === 1 ?  'morgen ' . date('H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset()) :
-                    date('l H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset());
-
-                $description = sprintf("Plaats je bestelling voor %s om het %s te ontvangen!",
-                    $hourMinutes,
-                    $deliveryDesc
-                );
-                break;
+        if (empty($this->trunkrs->getDeliveryDate())) {
+            $this->trunkrs->getTrunkrsShippingMethod();
         }
 
-        return $description;
+        $deliveryDate = $this->trunkrs->getDeliveryDate();
+        $announceBefore = $this->trunkrs->getAnnounceBefore();
+
+        if (!empty($deliveryDate)) {
+            $deliveryTimestamp = Data::parse8601($deliveryDate)->getTimestamp();
+            $deliveryDate = date('Y-m-d', $deliveryTimestamp);
+            $parsedDeliveryDate = Data::parse8601Date($deliveryDate);
+            $cutOffTime =  Data::parse8601($announceBefore);
+
+            $type = Data::getRateType($deliveryDate);
+
+            $description = null;
+            switch ($type) {
+                case 'same';
+                    $description = sprintf("Plaats je bestelling voor %s om het vandaag te ontvangen!",
+                        date('H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset()));
+                    break;
+
+                case 'next':
+                    $today = new DateTime("today");
+                    $diff = $today->diff($parsedDeliveryDate);
+                    $diffDays = (integer)$diff->format("%R%a");
+
+                    $deliveryDesc = $diffDays === 1
+                        ? 'morgen'
+                        : 'op' . ' ' . date('l', $parsedDeliveryDate->getTimestamp() + $parsedDeliveryDate->getOffset());
+
+                    $hourMinutes = $diffDays === 1 ?  'morgen ' . date('H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset()) :
+                        date('l H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset());
+
+                    $description = sprintf("Plaats je bestelling voor %s om het %s te ontvangen!",
+                        $hourMinutes,
+                        $deliveryDesc
+                    );
+                    break;
+            }
+
+           return $description;
+        }
+        return '';
     }
 }
