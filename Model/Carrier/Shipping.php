@@ -12,6 +12,27 @@ class Shipping extends AbstractCarrier implements CarrierInterface
 {
     const TRUNKRS = 'Trunkrs';
     const TNT_BASE_URL = 'https://parcel.trunkrs.nl/';
+
+    /**
+     * @var string Shipping Title
+     */
+    protected $title;
+
+    /**
+     * @var float
+     */
+    protected $price = 0.00;
+
+    /**
+     * @var string The date to announce Sameday delivery
+     */
+    protected $announceBefore;
+
+    /**
+     * @var string The delivery date
+     */
+    protected $deliveryDate;
+
     /**
      * @var string
      */
@@ -94,36 +115,40 @@ class Shipping extends AbstractCarrier implements CarrierInterface
 
     /**
      * get shipping method details
-     * @return array|null
+     * @return bool
      */
     public function getTrunkrsShippingMethod()
     {
         try {
             $country = $this->getCountry();
+            $postalCode = $this->getPostalCode();
             $totalAmount = $this->getTotalOrderAmount();
 
             $urlHost = $this->getShipmentMethodEndpoint();
             $client = new Client();
 
             $request = $client->get(
-                $urlHost . "?country=" . $country . "&orderValue=" . $totalAmount, [
+                $urlHost . "?country=" . $country . "&postalCode=" . $postalCode. "&orderValue=" . $totalAmount, [
                 'headers' => [
                     'Authorization' => sprintf('Bearer %s', $this->getAccessToken()),
                     'Content-Type' => 'application/json; charset=utf-8'
                 ]
             ]);
 
+
             $response = json_decode($request->getBody()->getContents());
 
-            return [
-                'title' => 'Trunkrs',
-                'name' => 'Same and next day delivery',
-                'price' => $response[0]->price,
-                'announceBefore' => $response[0]->announceBefore,
-                'deliveryDate' => $response[0]->deliveryWindowClose,
-            ];
+            $this->title = 'Trunkrs';
+            $this->price = $response[0]->price;
+            $this->announceBefore = $response[0]->announceBefore;
+            $this->deliveryDate = $response[0]->deliveryDate;
+
+            $this->getDeliveryText($this->announceBefore, $this->deliveryDate);
+
+            return $this->price !== 0.00 && !empty($this->deliveryDate);
         } catch (\Throwable $e) {
-            return null;
+            $this->title = '';
+            return false;
         }
     }
 
@@ -201,12 +226,27 @@ class Shipping extends AbstractCarrier implements CarrierInterface
     }
 
     /**
+     * @return string get delivery date
+     */
+    public function getDeliveryDate()
+    {
+        return $this->deliveryDate;
+    }
+
+    /**
+     * @return string get announce before date
+     */
+    public function getAnnounceBefore()
+    {
+        return $this->announceBefore;
+    }
+
+    /**
      * @return array
      */
     public function getAllowedMethods()
     {
-        $shipment = $this->getTrunkrsShippingMethod();
-        return [$this->_code => $shipment['title']];
+        return [$this->_code => $this->title];
     }
 
     /**
@@ -216,6 +256,8 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      */
     public function collectRates(RateRequest $request)
     {
+        $this->getTrunkrsShippingMethod();
+
         $this->rateRequest = $request;
 
         if (!$this->getIsConfigured()) {
@@ -227,8 +269,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
             return false;
         }
 
-        $shipment = $this->getTrunkrsShippingMethod();
-        if (!isset($shipment['title'])) {
+        if (empty($this->title)) {
             return false;
         }
 
@@ -239,11 +280,11 @@ class Shipping extends AbstractCarrier implements CarrierInterface
         $method = $this->rateMethodFactory->create();
 
         $method->setCarrier($this->_code);
-        $method->setCarrierTitle($shipment['name']);
+        $method->setCarrierTitle(null);
 
         $method->setMethod($this->_code);
-        $method->setMethodTitle($shipment['title']);
-        $amount = $shipment['price'];
+        $method->setMethodTitle($this->title);
+        $amount = $this->price;
 
         $method->setPrice($amount);
         $method->setCost($amount);
