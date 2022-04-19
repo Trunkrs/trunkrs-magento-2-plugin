@@ -55,7 +55,7 @@ class LayoutProcessorPlugin
     protected function getValue(): string
     {
         try {
-            return $this->trunkrsObj->getDeliveryText();
+            return $this->trunkrsObj->getShippingDescription();
         } catch (\Exception $e) {
             return "Error delivery time slot...".$e->getMessage();
         }
