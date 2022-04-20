@@ -280,7 +280,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
         $method = $this->rateMethodFactory->create();
 
         $method->setCarrier($this->_code);
-        $method->setCarrierTitle(null);
+        $method->setCarrierTitle('');
 
         $method->setMethod($this->_code);
         $method->setMethodTitle($this->title);
