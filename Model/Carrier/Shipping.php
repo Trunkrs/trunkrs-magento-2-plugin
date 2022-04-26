@@ -2,11 +2,13 @@
 
 namespace Trunkrs\Carrier\Model\Carrier;
 
+use DateTime;
 use GuzzleHttp\Client;
 use Magento\Quote\Model\Quote\Address\RateRequest;
 use Magento\Shipping\Model\Carrier\AbstractCarrier;
 use Magento\Shipping\Model\Carrier\CarrierInterface;
 use Magento\Shipping\Model\Rate\Result;
+use Trunkrs\Carrier\Helper\Data;
 
 class Shipping extends AbstractCarrier implements CarrierInterface
 {
@@ -19,19 +21,14 @@ class Shipping extends AbstractCarrier implements CarrierInterface
     protected $title;
 
     /**
-     * @var float
+     * @var float The shipping rate
      */
     protected $price = 0.00;
 
     /**
-     * @var string The date to announce Sameday delivery
+     * @var string $deliveryText The shipping method description
      */
-    protected $announceBefore;
-
-    /**
-     * @var string The delivery date
-     */
-    protected $deliveryDate;
+    protected $deliveryText;
 
     /**
      * @var string
@@ -140,16 +137,64 @@ class Shipping extends AbstractCarrier implements CarrierInterface
 
             $this->title = 'Trunkrs';
             $this->price = $response[0]->price;
-            $this->announceBefore = $response[0]->announceBefore;
-            $this->deliveryDate = $response[0]->deliveryDate;
+            $this->deliveryText = $this->getDescription($response[0]->deliveryDate, $response[0]->announceBefore);
 
-            $this->getDeliveryText($this->announceBefore, $this->deliveryDate);
-
-            return $this->price !== 0.00 && !empty($this->deliveryDate);
+            return !empty($this->deliveryDate) && !empty($this->deliveryText);
         } catch (\Throwable $e) {
             $this->title = '';
             return false;
         }
+    }
+
+    /**
+     * @return string
+     */
+    public function getShippingDescription()
+    {
+        return $this->deliveryText;
+    }
+
+    /**
+     * @param $deliveryDate
+     * @param $announceBefore
+     * @return string
+     */
+    public function getDescription($deliveryDate, $announceBefore)
+    {
+        $deliveryTimestamp = Data::parse8601($deliveryDate)->getTimestamp();
+        $deliveryDate = date('Y-m-d', $deliveryTimestamp);
+        $parsedDeliveryDate = Data::parse8601Date($deliveryDate);
+        $cutOffTime =  Data::parse8601($announceBefore);
+
+        $type = Data::getRateType($deliveryDate);
+
+        $description = '';
+        switch ($type) {
+            case 'same';
+                $description = sprintf("Plaats je bestelling voor %s om het vandaag te ontvangen!",
+                    date('H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset()));
+                break;
+
+            case 'next':
+                $today = new DateTime("today");
+                $diff = $today->diff($parsedDeliveryDate);
+                $diffDays = (integer)$diff->format("%R%a");
+
+                $deliveryDesc = $diffDays === 1
+                    ? 'morgen'
+                    : 'op' . ' ' . date('l', $parsedDeliveryDate->getTimestamp() + $parsedDeliveryDate->getOffset());
+
+                $hourMinutes = $diffDays === 1 ?  'morgen ' . date('H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset()) :
+                    date('l H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset());
+
+                $description = sprintf("Plaats je bestelling voor %s om het %s te ontvangen!",
+                    $hourMinutes,
+                    $deliveryDesc
+                );
+                break;
+        }
+
+        return $description;
     }
 
     /**
@@ -226,22 +271,6 @@ class Shipping extends AbstractCarrier implements CarrierInterface
     }
 
     /**
-     * @return string get delivery date
-     */
-    public function getDeliveryDate()
-    {
-        return $this->deliveryDate;
-    }
-
-    /**
-     * @return string get announce before date
-     */
-    public function getAnnounceBefore()
-    {
-        return $this->announceBefore;
-    }
-
-    /**
      * @return array
      */
     public function getAllowedMethods()
@@ -251,8 +280,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
 
     /**
      * @param RateRequest $request
-     * @return bool|\Magento\Framework\DataObject|Result|null
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @return false|Result
      */
     public function collectRates(RateRequest $request)
     {
@@ -288,6 +316,8 @@ class Shipping extends AbstractCarrier implements CarrierInterface
 
         $method->setPrice($amount);
         $method->setCost($amount);
+
+        $method->setDescription($this->getShippingDescription());
 
         $result->append($method);
 
