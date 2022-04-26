@@ -36,8 +36,7 @@ define([
             var trunkrs_delivery_time = null;
             var shippingMethod = quote.shippingMethod().method_code+'_'+quote.shippingMethod().carrier_code;
             if(shippingMethod === "trunkrsShipping_trunkrsShipping") {
-                trunkrs_delivery_time = jQuery('[name="trunkrs_shipping_field[trunkrs_delivery_time]"]').val();
-
+                trunkrs_delivery_time = quote.shippingMethod()?.extension_attributes?.description;
             }
             return trunkrs_delivery_time ? trunkrs_delivery_time : '';
         },

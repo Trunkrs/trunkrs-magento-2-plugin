@@ -1,8 +1,11 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
-    <type name="Magento\Checkout\Block\Checkout\LayoutProcessor">
-        <plugin name="checkout_trunkrs_shipping_fields" type="Trunkrs\Carrier\Plugin\Checkout\LayoutProcessorPlugin" sortOrder="100"/>
+    <type name="Magento\Quote\Model\Cart\ShippingMethodConverter">
+        <plugin name="add_description_to_method" type="Trunkrs\Carrier\Plugin\Carrier\Description" disabled="false" sortOrder="10"/>
+    </type>
+    <type name="Magento\Quote\Model\Quote\Address\Rate">
+        <plugin name="add_description_to_method_rate" type="Trunkrs\Carrier\Plugin\Quote\Address\Rate" disabled="false" sortOrder="20"/>
     </type>
     <preference for="Trunkrs\Carrier\Api\TrunkrsShippingInterface" type="Trunkrs\Carrier\Model\TrunkrsIntegration" />
 </config>

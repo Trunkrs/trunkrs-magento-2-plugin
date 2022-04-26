@@ -8,7 +8,6 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Helper\AbstractHelper;
 use Magento\Framework\App\Helper\Context;
 use Magento\Store\Model\ScopeInterface;
-use Trunkrs\Carrier\Model\Carrier\Shipping;
 
 class Data extends AbstractHelper
 {
@@ -18,16 +17,13 @@ class Data extends AbstractHelper
      * @var ScopeConfigInterface
      */
     protected $scopeConfig;
-    protected $trunkrs;
 
     public function __construct(
         Context $context,
-        ScopeConfigInterface $scopeConfig,
-        Shipping $trunkrs
+        ScopeConfigInterface $scopeConfig
     )
     {
         $this->scopeConfig = $scopeConfig;
-        $this->trunkrs = $trunkrs;
         parent::__construct($context);
     }
 
@@ -139,56 +135,5 @@ class Data extends AbstractHelper
         $result->setTimezone(new DateTimeZone('Europe/Amsterdam'));
 
         return $result;
-    }
-
-    /**
-     * @return string
-     */
-    public function getShippingDescription()
-    {
-        if (empty($this->trunkrs->getDeliveryDate())) {
-            $this->trunkrs->getTrunkrsShippingMethod();
-        }
-
-        $deliveryDate = $this->trunkrs->getDeliveryDate();
-        $announceBefore = $this->trunkrs->getAnnounceBefore();
-
-        if (!empty($deliveryDate)) {
-            $deliveryTimestamp = Data::parse8601($deliveryDate)->getTimestamp();
-            $deliveryDate = date('Y-m-d', $deliveryTimestamp);
-            $parsedDeliveryDate = Data::parse8601Date($deliveryDate);
-            $cutOffTime =  Data::parse8601($announceBefore);
-
-            $type = Data::getRateType($deliveryDate);
-
-            $description = null;
-            switch ($type) {
-                case 'same';
-                    $description = sprintf("Plaats je bestelling voor %s om het vandaag te ontvangen!",
-                        date('H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset()));
-                    break;
-
-                case 'next':
-                    $today = new DateTime("today");
-                    $diff = $today->diff($parsedDeliveryDate);
-                    $diffDays = (integer)$diff->format("%R%a");
-
-                    $deliveryDesc = $diffDays === 1
-                        ? 'morgen'
-                        : 'op' . ' ' . date('l', $parsedDeliveryDate->getTimestamp() + $parsedDeliveryDate->getOffset());
-
-                    $hourMinutes = $diffDays === 1 ?  'morgen ' . date('H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset()) :
-                        date('l H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset());
-
-                    $description = sprintf("Plaats je bestelling voor %s om het %s te ontvangen!",
-                        $hourMinutes,
-                        $deliveryDesc
-                    );
-                    break;
-            }
-
-           return $description;
-        }
-        return '';
     }
 }

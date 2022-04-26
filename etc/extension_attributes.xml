@@ -3,4 +3,7 @@
    <extension_attributes for="Magento\Checkout\Api\Data\ShippingInformationInterface">
        <attribute code="trunkrs_delivery_time" type="string" />
    </extension_attributes>
+   <extension_attributes for="Magento\Quote\Api\Data\ShippingMethodInterface">
+       <attribute code="description" type="string" />
+   </extension_attributes>
 </config>
