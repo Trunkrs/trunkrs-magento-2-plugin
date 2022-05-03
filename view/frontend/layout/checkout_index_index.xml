@@ -11,10 +11,21 @@
                                    <item name="children" xsi:type="array">
                                        <item name="shipping-step" xsi:type="array">
                                            <item name="children" xsi:type="array">
+                                               <item name="step-config" xsi:type="array">
+                                                   <item name="children" xsi:type="array">
+                                                       <item name="shipping-rates-validation" xsi:type="array">
+                                                           <item name="children" xsi:type="array">
+                                                               <item name="trunkrsShipping-rates-validation" xsi:type="array">
+                                                                   <item name="component" xsi:type="string">Trunkrs_Carrier/js/view/shipping-rates-validation</item>
+                                                               </item>
+                                                           </item>
+                                                       </item>
+                                                   </item>
+                                               </item>
                                                <item name="shippingAddress" xsi:type="array">
                                                    <item name="config" xsi:type="array">
                                                        <item name="shippingMethodItemTemplate" xsi:type="string">Trunkrs_Carrier/shipping-address/shipping-method-item</item>
-                                                   </item>                                                   
+                                                   </item>
                                                    <item name="children" xsi:type="array">
                                                        <item name="trunkrs-shipping-method-fields" xsi:type="array">
                                                            <item name="component" xsi:type="string">uiComponent</item>
