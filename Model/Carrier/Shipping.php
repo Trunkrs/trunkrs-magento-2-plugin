@@ -4,6 +4,7 @@ namespace Trunkrs\Carrier\Model\Carrier;
 
 use DateTime;
 use GuzzleHttp\Client;
+use IntlDateFormatter;
 use Magento\Quote\Model\Quote\Address\RateRequest;
 use Magento\Shipping\Model\Carrier\AbstractCarrier;
 use Magento\Shipping\Model\Carrier\CarrierInterface;
@@ -167,6 +168,14 @@ class Shipping extends AbstractCarrier implements CarrierInterface
         $cutOffTime =  Data::parse8601($announceBefore);
 
         $type = Data::getRateType($deliveryDate);
+        $fmt = new IntlDateFormatter(
+            'nl_NL',
+            IntlDateFormatter::FULL,
+            IntlDateFormatter::FULL,
+            'Europe/Amsterdam',
+            IntlDateFormatter::GREGORIAN,
+            'cccc'
+        );
 
         $description = '';
         switch ($type) {
@@ -182,10 +191,11 @@ class Shipping extends AbstractCarrier implements CarrierInterface
 
                 $deliveryDesc = $diffDays === 1
                     ? 'morgen'
-                    : 'op' . ' ' . date('l', $parsedDeliveryDate->getTimestamp() + $parsedDeliveryDate->getOffset());
+                    : 'op' . ' ' . $fmt->format($parsedDeliveryDate->getTimestamp() + $parsedDeliveryDate->getOffset());
 
                 $hourMinutes = $diffDays === 1 ?  'morgen ' . date('H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset()) :
-                    date('l H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset());
+                    $fmt->format($cutOffTime->getTimestamp() + $cutOffTime->getOffset()) . ' ' .
+                    date('H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset());
 
                 $description = sprintf("Plaats je bestelling voor %s om het %s te ontvangen!",
                     $hourMinutes,
@@ -280,7 +290,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
 
     /**
      * @param RateRequest $request
-     * @return false|Result
+     * @return Result|bool
      */
     public function collectRates(RateRequest $request)
     {
