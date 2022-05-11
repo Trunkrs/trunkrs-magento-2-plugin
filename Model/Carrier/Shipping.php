@@ -180,7 +180,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
         $description = '';
         switch ($type) {
             case 'same';
-                $description = sprintf("Plaats je bestelling voor %s om het vandaag te ontvangen!",
+                $description = sprintf("Plaats je bestelling voor %s om het vandaag tussen 17u00 en 22u00 te ontvangen!",
                     date('H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset()));
                 break;
 
@@ -197,7 +197,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
                     $fmt->format($cutOffTime->getTimestamp() + $cutOffTime->getOffset()) . ' ' .
                     date('H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset());
 
-                $description = sprintf("Plaats je bestelling voor %s om het %s te ontvangen!",
+                $description = sprintf("Plaats je bestelling voor %s om het %s tussen 17u00 en 22u00 te ontvangen!",
                     $hourMinutes,
                     $deliveryDesc
                 );
