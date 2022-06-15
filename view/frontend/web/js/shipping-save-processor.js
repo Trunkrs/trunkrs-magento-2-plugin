@@ -30,11 +30,10 @@ define(
 
                var shippingMethod = quote.shippingMethod().method_code+'_'+quote.shippingMethod().carrier_code;
 
-               var trunkrs_delivery_time = null;
+               var trunkrs_delivery_date = null;
 
                if(shippingMethod === "trunkrsShipping_trunkrsShipping") {
-                   trunkrs_delivery_time = jQuery('[name="trunkrs_shipping_field[trunkrs_delivery_time]"]').val();
-
+                   trunkrs_delivery_date = jQuery('[name="trunkrs_shipping_field[trunkrs_delivery_date]"] option:selected').val();
                }
 
                if (!quote.billingAddress()) {
@@ -47,8 +46,7 @@ define(
                        shipping_method_code: quote.shippingMethod().method_code,
                        shipping_carrier_code: quote.shippingMethod().carrier_code,
                        extension_attributes: {
-                           trunkrs_delivery_time : trunkrs_delivery_time
-
+                           trunkrs_delivery_date : trunkrs_delivery_date
                        }
                    }
                };
