@@ -22,8 +22,10 @@
 <!-- ko if: ((method.method_code + '_' + method.carrier_code == "trunkrsShipping_trunkrsShipping") && element.selectedMethod() == "trunkrsShipping_trunkrsShipping") -->
 <tr class="trunkrs-shipping-method-fields-shipping-information">
    <td colspan="4">
-       <div id="trunkrs-shipping-method-description" data-bind="visible: method.method_code + '_' + method.carrier_code == 'trunkrsShipping_trunkrsShipping'">
-           <!-- ko text: $data.extension_attributes.description --><!-- /ko -->
+       <div id="trunkrs-shipping-method-fields-details-list-wrapper" data-bind="visible: method.method_code + '_' + method.carrier_code == 'trunkrsShipping_trunkrsShipping'">
+           <!-- ko foreach: element.getRegion('trunkrs-shipping-method-fields') -->
+           <!-- ko template: getTemplate() --><!-- /ko -->
+           <!--/ko-->
        </div>
    </td>
 </tr>

@@ -133,7 +133,6 @@ class Shipping extends AbstractCarrier implements CarrierInterface
                 ]
             ]);
 
-
             $response = json_decode($request->getBody()->getContents());
 
             $this->title = 'Trunkrs';
@@ -326,8 +325,6 @@ class Shipping extends AbstractCarrier implements CarrierInterface
 
         $method->setPrice($amount);
         $method->setCost($amount);
-
-        $method->setDescription($this->getShippingDescription());
 
         $result->append($method);
 
