@@ -4,8 +4,9 @@ define([
     'Magento_Checkout/js/model/quote',
     'Magento_Checkout/js/model/step-navigator',
     'Magento_Checkout/js/model/sidebar',
-    'Magento_Catalog/js/price-utils'
-], function ($, Component, quote, stepNavigator, sidebarModel, priceUtils) {
+    'Magento_Catalog/js/price-utils',
+    'mage/translate'
+], function ($, Component, quote, stepNavigator, sidebarModel, priceUtils, $t) {
     'use strict';
 
     return Component.extend({
@@ -36,7 +37,7 @@ define([
             var shippingMethod = quote.shippingMethod().method_code+'_'+quote.shippingMethod().carrier_code;
             var selectedTimeslot = jQuery('[name="trunkrs_shipping_field[trunkrs_delivery_date]"] option:selected').text();
             if(shippingMethod === "trunkrsShipping_trunkrsShipping") {
-                return 'Delivery date: ' + selectedTimeslot;
+                return $t('Delivery date:') + ' ' + selectedTimeslot;
             }
             return '';
         },
