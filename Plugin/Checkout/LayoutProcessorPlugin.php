@@ -4,6 +4,7 @@ namespace Trunkrs\Carrier\Plugin\Checkout;
 
 use GuzzleHttp\Client;
 use Magento\Checkout\Block\Checkout\LayoutProcessor;
+use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
 use Trunkrs\Carrier\Helper\Data;
 use Trunkrs\Carrier\Model\Carrier\Shipping;
 
@@ -11,11 +12,15 @@ class LayoutProcessorPlugin
 {
     protected $trunkrsObj;
 
+    protected $timezone;
+
     public function __construct(
-        Shipping $trunkrsObj
+        Shipping $trunkrsObj,
+        TimezoneInterface $timezone
     )
     {
         $this->trunkrsObj = $trunkrsObj;
+        $this->timezone = $timezone;
     }
 
     /**
@@ -50,7 +55,7 @@ class LayoutProcessorPlugin
             foreach($response as $delivery) {
                 $options[] = [
                     'value' => Data::parse8601($delivery->deliveryDate)->format('Y-m-d'),
-                    'label' => date("l j, F", Data::parse8601($delivery->announceBefore)->getTimestamp())
+                    'label' => $this->timezone->formatDate(Data::parse8601($delivery->announceBefore), \IntlDateFormatter::FULL, false),
                 ];
             }
         }
