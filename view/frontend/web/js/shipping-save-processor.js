@@ -33,7 +33,7 @@ define(
                var trunkrs_delivery_date = null;
 
                if(shippingMethod === "trunkrsShipping_trunkrsShipping") {
-                   trunkrs_delivery_date = jQuery('[name="trunkrs_shipping_field[trunkrs_delivery_date]"] option:selected').val();
+                   trunkrs_delivery_date = jQuery('#trunkrs-delivery-options option:selected').val();
                }
 
                if (!quote.billingAddress()) {

@@ -4,6 +4,6 @@
        <attribute code="trunkrs_delivery_date" type="string" />
    </extension_attributes>
    <extension_attributes for="Magento\Quote\Api\Data\ShippingMethodInterface">
-       <attribute code="description" type="string" />
+       <attribute code="delivery_options" type="array" />
    </extension_attributes>
 </config>
