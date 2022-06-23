@@ -2,9 +2,7 @@
 
 namespace Trunkrs\Carrier\Model\Carrier;
 
-use DateTime;
 use GuzzleHttp\Client;
-use IntlDateFormatter;
 use Magento\Quote\Model\Quote\Address\RateRequest;
 use Magento\Shipping\Model\Carrier\AbstractCarrier;
 use Magento\Shipping\Model\Carrier\CarrierInterface;
@@ -27,9 +25,9 @@ class Shipping extends AbstractCarrier implements CarrierInterface
     protected $price = 0.00;
 
     /**
-     * @var string $deliveryText The shipping method description
+     * @var array $deliveryOptions The available timeslot
      */
-    protected $deliveryText;
+    protected $deliveryOptions = [];
 
     /**
      * @var string
@@ -72,6 +70,11 @@ class Shipping extends AbstractCarrier implements CarrierInterface
     protected $rateRequest;
 
     /**
+     * @var \Magento\Framework\Stdlib\DateTime\TimezoneInterface
+     */
+    protected $timezone;
+
+    /**
      * @var \Magento\Checkout\Model\Cart
      */
     protected $cart;
@@ -86,6 +89,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      * @param \Magento\Store\Model\StoreManagerInterface $storeManagerInterface
      * @param \Magento\Shipping\Model\Tracking\ResultFactory $trackFactory
      * @param \Magento\Shipping\Model\Tracking\Result\StatusFactory $statusFactory
+     * @param \Magento\Framework\Stdlib\DateTime\TimezoneInterface $timezone
      * @param \Magento\Checkout\Model\Cart $cart
      * @param array $data
      */
@@ -98,6 +102,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
         \Magento\Store\Model\StoreManagerInterface                  $storeManagerInterface,
         \Magento\Shipping\Model\Tracking\ResultFactory              $trackFactory,
         \Magento\Shipping\Model\Tracking\Result\StatusFactory       $statusFactory,
+        \Magento\Framework\Stdlib\DateTime\TimezoneInterface        $timezone,
         \Magento\Checkout\Model\Cart                                $cart,
         array                                                       $data = []
     )
@@ -107,6 +112,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
         $this->storeManagerInterface = $storeManagerInterface;
         $this->trackFactory = $trackFactory;
         $this->statusFactory = $statusFactory;
+        $this->timezone = $timezone;
         $this->cart = $cart;
         parent::__construct($scopeConfig, $rateErrorFactory, $logger, $data);
     }
@@ -135,75 +141,37 @@ class Shipping extends AbstractCarrier implements CarrierInterface
 
             $response = json_decode($request->getBody()->getContents());
 
-            $this->title = 'Trunkrs';
-            $this->price = $response[0]->price;
-            $this->deliveryText = $this->getDescription($response[0]->deliveryDate, $response[0]->announceBefore);
+            if (!empty($response)) {
+                $this->title = 'Trunkrs';
+                $this->price = $response[0]->price;
+                $this->deliveryOptions = $this->getTrunkrsDeliveryOptions($response);
+            }
 
-            return !empty($this->deliveryDate) && !empty($this->deliveryText);
+            return !empty($this->deliveryOptions);
         } catch (\Throwable $e) {
+            $this->_logger->critical($e);
             $this->title = '';
             return false;
         }
     }
 
     /**
-     * @return string
+     * @param $data shipping rates data
+     * @return array
      */
-    public function getShippingDescription()
+    public function getTrunkrsDeliveryOptions($data)
     {
-        return $this->deliveryText;
-    }
-
-    /**
-     * @param $deliveryDate
-     * @param $announceBefore
-     * @return string
-     */
-    public function getDescription($deliveryDate, $announceBefore)
-    {
-        $deliveryTimestamp = Data::parse8601($deliveryDate)->getTimestamp();
-        $deliveryDate = date('Y-m-d', $deliveryTimestamp);
-        $parsedDeliveryDate = Data::parse8601Date($deliveryDate);
-        $cutOffTime =  Data::parse8601($announceBefore);
-
-        $type = Data::getRateType($deliveryDate);
-        $fmt = new IntlDateFormatter(
-            'nl_NL',
-            IntlDateFormatter::FULL,
-            IntlDateFormatter::FULL,
-            'Europe/Amsterdam',
-            IntlDateFormatter::GREGORIAN,
-            'cccc'
-        );
-
-        $description = '';
-        switch ($type) {
-            case 'same';
-                $description = sprintf("Plaats je bestelling voor %s om het vandaag tussen 17u00 en 22u00 te ontvangen!",
-                    date('H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset()));
-                break;
-
-            case 'next':
-                $today = new DateTime("today");
-                $diff = $today->diff($parsedDeliveryDate);
-                $diffDays = (integer)$diff->format("%R%a");
-
-                $deliveryDesc = $diffDays === 1
-                    ? 'morgen'
-                    : 'op' . ' ' . $fmt->format($parsedDeliveryDate->getTimestamp() + $parsedDeliveryDate->getOffset());
-
-                $hourMinutes = $diffDays === 1 ?  'morgen ' . date('H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset()) :
-                    $fmt->format($cutOffTime->getTimestamp() + $cutOffTime->getOffset()) . ' ' .
-                    date('H:i', $cutOffTime->getTimestamp() + $cutOffTime->getOffset());
-
-                $description = sprintf("Plaats je bestelling voor %s om het %s tussen 17u00 en 22u00 te ontvangen!",
-                    $hourMinutes,
-                    $deliveryDesc
-                );
-                break;
+        $options = [];
+        if (!empty($data)) {
+            foreach($data as $delivery) {
+                $deliveryDate = Data::parse8601($delivery->announceBefore);
+                $options[] = [
+                    'timeslotValue' => $deliveryDate->format('Y-m-d'),
+                    'timeslotLabel' => $this->timezone->formatDate($deliveryDate,\IntlDateFormatter::FULL, false)
+                ];
+            }
         }
-
-        return $description;
+        return $options;
     }
 
     /**
@@ -325,6 +293,8 @@ class Shipping extends AbstractCarrier implements CarrierInterface
 
         $method->setPrice($amount);
         $method->setCost($amount);
+
+        $method->setDeliveryOptions($this->deliveryOptions);
 
         $result->append($method);
 

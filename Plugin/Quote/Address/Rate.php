@@ -13,8 +13,8 @@ class Rate
     public function afterImportShippingRate($subject, $result, $rate)
     {
         if ($rate instanceof \Magento\Quote\Model\Quote\Address\RateResult\Method) {
-            $result->setDescription(
-                $rate->getDescription()
+            $result->setDeliveryOptions(
+                $rate->getDeliveryOptions()
             );
         }
 

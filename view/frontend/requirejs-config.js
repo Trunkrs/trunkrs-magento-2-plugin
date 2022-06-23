@@ -12,7 +12,6 @@ const config = {
            "Magento_Checkout/js/model/shipping-save-processor/default" : "Trunkrs_Carrier/js/shipping-save-processor",
            "Magento_Checkout/js/view/shipping-information" : "Trunkrs_Carrier/js/view/shipping-information",
            "Magento_Checkout/js/view/shipping-information/list" : "Trunkrs_Carrier/js/view/shipping-information/list"
-
        }
    }
 };

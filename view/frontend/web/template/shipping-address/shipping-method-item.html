@@ -23,9 +23,15 @@
 <tr class="trunkrs-shipping-method-fields-shipping-information">
    <td colspan="4">
        <div id="trunkrs-shipping-method-fields-details-list-wrapper" data-bind="visible: method.method_code + '_' + method.carrier_code == 'trunkrsShipping_trunkrsShipping'">
-           <!-- ko foreach: element.getRegion('trunkrs-shipping-method-fields') -->
-           <!-- ko template: getTemplate() --><!-- /ko -->
-           <!--/ko-->
+           <label for="trunkrs-delivery-options" data-bind="i18n: 'Select delivery date:'"></label>
+           <p></p>
+           <select id="trunkrs-delivery-options"
+                   data-bind="options: method.extension_attributes.delivery_options, optionsText: function(item) {
+                       return JSON.parse(item).timeslotLabel
+                   }, optionsValue: function(item) {
+                       return JSON.parse(item).timeslotValue
+                   }"
+           ></select>
        </div>
    </td>
 </tr>

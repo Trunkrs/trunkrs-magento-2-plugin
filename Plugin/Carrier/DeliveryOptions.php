@@ -5,7 +5,7 @@ namespace Trunkrs\Carrier\Plugin\Carrier;
 use Magento\Quote\Api\Data\ShippingMethodInterfaceFactory;
 
 
-class Description
+class DeliveryOptions
 {
     /**
      * @var ShippingMethodInterfaceFactory
@@ -36,7 +36,7 @@ class Description
             :
             $this->extensionFactory->create()
         ;
-        $extensionAttribute->setDescription($rateModel->getDescription());
+        $extensionAttribute->setDeliveryOptions($rateModel->getDeliveryOptions() ?? []);
         $result->setExtensionAttributes($extensionAttribute);
         return $result;
     }
