@@ -35,7 +35,7 @@ define([
          */
         getTrunkrsDeliveryTimeslot: function () {
             var shippingMethod = quote.shippingMethod().method_code+'_'+quote.shippingMethod().carrier_code;
-            var selectedTimeslot = jQuery('#trunkrs-delivery-options option:selected').text();
+            var selectedTimeslot = window.sessionStorage.getItem('trunkrs_delivery_date_text');
             if(shippingMethod === "trunkrsShipping_trunkrsShipping") {
                 return $t('Delivery date:') + ' ' + selectedTimeslot;
             }

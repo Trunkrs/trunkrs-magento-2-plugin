@@ -15,21 +15,29 @@ class UpgradeSchema implements UpgradeSchemaInterface
     {
         $setup->startSetup();
 
-        if (version_compare($context->getVersion(), '2.0.8', '<')) {
+        if (version_compare($context->getVersion(), '2.1.0', '<')) {
             // get table customer_entity
             $eavTable = $setup->getTable('quote');
-            $columnName = 'trunkrs_delivery_date';
+            $eavTable2 = $setup->getTable('sales_order');
+            $eavTable3 = $setup->getTable('sales_order_grid');
 
-            // Check if the table already exists
-            if ($setup->getConnection()->isTableExists($eavTable) == true) {
-                $connection = $setup->getConnection();
+            $tables = [$eavTable, $eavTable2, $eavTable3];
 
-                if ($connection->tableColumnExists($eavTable, $columnName) === false) {
-                    $connection->addColumn('quote', $columnName, array(
-                        'type' => \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
-                        'nullable' => true,
-                        'comment' => 'Delivery Date',
-                    ));
+            $columnNames = ['trunkrs_delivery_date', 'trunkrs_delivery_text'];
+
+            $connection = $setup->getConnection();
+            foreach ($tables as $table) {
+                // Check if the table already exists
+                if ($setup->getConnection()->isTableExists($table) == true) {
+                    foreach ($columnNames as $columnName) {
+                        if ($connection->tableColumnExists($table, $columnName) === false) {
+                            $connection->addColumn($table, $columnName, array(
+                                'type' => \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+                                'nullable' => true,
+                                'comment' => 'Delivery Date',
+                            ));
+                        }
+                    }
                 }
             }
         }

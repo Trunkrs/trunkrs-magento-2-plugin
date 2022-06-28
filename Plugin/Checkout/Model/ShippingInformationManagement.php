@@ -39,6 +39,7 @@ class ShippingInformationManagement
         $quote = $this->quoteRepository->getActive($cartId);
 
         $quote->setTrunkrsDeliveryDate($extAttributes->getTrunkrsDeliveryDate());
+        $quote->setTrunkrsDeliveryText($extAttributes->getTrunkrsDeliveryText());
         $this->quoteRepository->save($quote);
     }
 }

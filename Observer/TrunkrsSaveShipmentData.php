@@ -86,7 +86,7 @@ class TrunkrsSaveShipmentData implements ObserverInterface
         $shippingData = $order->getShippingAddress();
         $orderReference = $order->getIncrementId();
 
-        $intendedDeliveryDate = $quote->getData('trunkrs_delivery_date');
+        $intendedDeliveryDate = $quote->getTrunkrsDeliveryDate();
 
         // check whether an order can be shipped or not
         if ($order->canShip()) {

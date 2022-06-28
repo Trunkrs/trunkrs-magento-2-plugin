@@ -2,7 +2,8 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Api/etc/extension_attributes.xsd">
    <extension_attributes for="Magento\Checkout\Api\Data\ShippingInformationInterface">
        <attribute code="trunkrs_delivery_date" type="string" />
-   </extension_attributes>
+        <attribute code="trunkrs_delivery_text" type="string" />
+    </extension_attributes>
    <extension_attributes for="Magento\Quote\Api\Data\ShippingMethodInterface">
        <attribute code="delivery_options" type="array" />
    </extension_attributes>

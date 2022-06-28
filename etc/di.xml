@@ -11,4 +11,11 @@
         <plugin name="add_delivery_options_to_method_rate" type="Trunkrs\Carrier\Plugin\Quote\Address\Rate" disabled="false" sortOrder="20"/>
     </type>
     <preference for="Trunkrs\Carrier\Api\TrunkrsShippingInterface" type="Trunkrs\Carrier\Model\TrunkrsIntegration" />
+    <virtualType name="Magento\Sales\Model\ResourceModel\Order\Grid" type="Magento\Sales\Model\ResourceModel\Grid">
+        <arguments>
+            <argument name="columns" xsi:type="array">
+                <item name="trunkrs_delivery_text" xsi:type="string">sales_order.trunkrs_delivery_text</item>
+            </argument>
+        </arguments>
+    </virtualType>
 </config>
