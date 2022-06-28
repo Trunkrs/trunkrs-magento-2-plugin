@@ -165,9 +165,12 @@ class Shipping extends AbstractCarrier implements CarrierInterface
         if (!empty($data)) {
             foreach($data as $delivery) {
                 $deliveryDate = Data::parse8601($delivery->announceBefore);
+                $deliveryTimeOpen = Data::parse8601($delivery->deliveryWindowOpen);
+                $deliveryTimeClose = Data::parse8601($delivery->deliveryWindowClose);
                 $options[] = [
                     'timeslotValue' => $deliveryDate->format('Y-m-d'),
                     'timeslotLabel' => $this->timezone->formatDate($deliveryDate,\IntlDateFormatter::FULL, false)
+                        . ', ' . $deliveryTimeOpen->format('H:i') . ' - ' . $deliveryTimeClose->format('H:i')
                 ];
             }
         }
