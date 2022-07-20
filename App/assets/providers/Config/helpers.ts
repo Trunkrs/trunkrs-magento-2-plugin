@@ -63,3 +63,21 @@ export const doConfigureRequest = async (
     },
   })
 }
+
+export const doDisableAutoShipmentCreation = async (
+  disableAutoShipment: boolean,
+  magentoToken: string,
+  baseUrl: string,
+): Promise<void> => {
+  await Axios.request<void>({
+    method: 'POST',
+    baseURL: baseUrl,
+    url: 'rest/V1/trunkrs/disable-auto-shipment',
+    headers: {
+      magentoToken,
+    },
+    data: {
+      disableAutoShipment,
+    },
+  })
+}

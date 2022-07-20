@@ -81,6 +81,8 @@ class TrunkrsSaveShipmentData implements ObserverInterface
         $order = $observer->getEvent()->getOrder();
         $quote = $this->cart->getQuote();
 
+        $disableAutoShipment = $this->helper->getDisableAutoShipmentCreation();
+
         /** @var \Magento\Sales\Model\Order $order $shippingName ... */
         $shippingName = $order->getShippingMethod();
         $shippingData = $order->getShippingAddress();
@@ -91,26 +93,29 @@ class TrunkrsSaveShipmentData implements ObserverInterface
         // check whether an order can be shipped or not
         if ($order->canShip()) {
             if ($shippingName === self::TRUNKRS_SHIPPING_CODE) {
-                $orderShipment = $this->convertOrder->toShipment($order);
+                if (!$disableAutoShipment) {
+                    $orderShipment = $this->convertOrder->toShipment($order);
 
-                foreach ($order->getAllItems() as $orderItem) {
-                    // Check virtual if item has qty and not virtual type
-                    if (!$orderItem->getQtyToShip() || $orderItem->getIsVirtual()) {
-                        continue;
+                    foreach ($order->getAllItems() as $orderItem) {
+                        // Check virtual if item has qty and not virtual type
+                        if (!$orderItem->getQtyToShip() || $orderItem->getIsVirtual()) {
+                            continue;
+                        }
+
+                        $qty = $orderItem->getQtyToShip();
+                        $shipmentItem = $this->convertOrder->itemToShipmentItem($orderItem)->setQty($qty);
+
+                        $orderShipment->addItem($shipmentItem);
                     }
 
-                    $qty = $orderItem->getQtyToShip();
-                    $shipmentItem = $this->convertOrder->itemToShipmentItem($orderItem)->setQty($qty);
+                    $orderShipment->register();
 
-                    $orderShipment->addItem($shipmentItem);
-                }
-
-                $orderShipment->register();
-
-                try {
                     // Save created Order Shipment
                     $orderShipment->save();
                     $orderShipment->getOrder()->save();
+                }
+
+                try {
 
                     // post shipment to Shipping portal
                     $urlHost = $this->helper->getCreateShipmentEndpoint();
@@ -142,22 +147,24 @@ class TrunkrsSaveShipmentData implements ObserverInterface
                         'json' => ['shipments' => [$singleShipmentBody]]
                     ]);
 
-                    $trunkrsObj = json_decode($response->getBody());
-                    $trunkrsNumber = $trunkrsObj->success[0]->trunkrsNumber;
-                    $labelUrl = $trunkrsObj->success[0]->labelUrl;
+                    if (!$disableAutoShipment) {
+                        $trunkrsObj = json_decode($response->getBody());
+                        $trunkrsNumber = $trunkrsObj->success[0]->trunkrsNumber;
+                        $labelUrl = $trunkrsObj->success[0]->labelUrl;
 
-                    $orderShipment->save();
+                        $orderShipment->save();
 
-                    $track = $this->trackFactory->create();
-                    $track->setCarrierCode(self::CARRIER_CODE);
-                    $track->setTitle(Shipping::TRUNKRS);
-                    $track->setTrackNumber($trunkrsNumber);
+                        $track = $this->trackFactory->create();
+                        $track->setCarrierCode(self::CARRIER_CODE);
+                        $track->setTitle(Shipping::TRUNKRS);
+                        $track->setTrackNumber($trunkrsNumber);
 
-                    $orderShipment->addTrack($track)
-                        ->setShippingAddressId($trunkrsNumber)
-                        ->setShippingLabel(file_get_contents($labelUrl));
+                        $orderShipment->addTrack($track)
+                            ->setShippingAddressId($trunkrsNumber)
+                            ->setShippingLabel(file_get_contents($labelUrl));
 
-                    $orderShipment->save();
+                        $orderShipment->save();
+                    }
 
                     return $response;
                 } catch (\Exception $e) {

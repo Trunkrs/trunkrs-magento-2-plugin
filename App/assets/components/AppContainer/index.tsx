@@ -12,13 +12,23 @@ import DetailsPanel from '../DetailsPanel'
 import './AppContainer.scss'
 
 const AppContainer: React.FC = () => {
-  const { isWorking, config, prepareConfig } = useConfig()
+  const {
+    isWorking,
+    disableAutoShipmentCreation,
+    config,
+    prepareConfig,
+    onDisableAutoShipment,
+  } = useConfig()
 
   const handleLoginDone = React.useCallback(
     async (result: LoginResult): Promise<void> =>
       prepareConfig(result.accessToken, result.organizationId),
     [prepareConfig],
   )
+
+  const handleDisableAutoShipment = React.useCallback(async () => {
+    await onDisableAutoShipment()
+  }, [onDisableAutoShipment])
 
   return (
     <CenteredContainer>
@@ -29,9 +39,11 @@ const AppContainer: React.FC = () => {
       ) : (
         <>
           <DetailsPanel
+            isDisableAutoShipment={disableAutoShipmentCreation}
             integrationId={config.details.integrationId}
             organizationId={config.details.organizationId}
             organizationName={config.details.organizationName}
+            onDisableShipment={handleDisableAutoShipment}
           />
         </>
       )}

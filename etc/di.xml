@@ -11,6 +11,7 @@
         <plugin name="add_delivery_options_to_method_rate" type="Trunkrs\Carrier\Plugin\Quote\Address\Rate" disabled="false" sortOrder="20"/>
     </type>
     <preference for="Trunkrs\Carrier\Api\TrunkrsShippingInterface" type="Trunkrs\Carrier\Model\TrunkrsIntegration" />
+    <preference for="Trunkrs\Carrier\Api\TrunkrsDisableAutoShipmentInterface" type="Trunkrs\Carrier\Model\TrunkrsDisableAutoShipment" />
     <virtualType name="Magento\Sales\Model\ResourceModel\Order\Grid" type="Magento\Sales\Model\ResourceModel\Grid">
         <arguments>
             <argument name="columns" xsi:type="array">
