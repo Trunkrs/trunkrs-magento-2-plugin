@@ -1,8 +1,12 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import { AxiosError } from 'axios'
 
 import ConfigContext, { Configuration } from './index'
-import { doConfigureRequest, doShippingReqisterRequest } from './helpers'
+import {
+  doConfigureRequest,
+  doDisableAutoShipmentCreation,
+  doShippingReqisterRequest,
+} from './helpers'
 
 const initialConfigText = document.getElementById('__tr-mage-settings__')
   ?.innerText as string
@@ -11,6 +15,9 @@ const initialConfig = initialConfigText ? JSON.parse(initialConfigText) : {}
 const ConfigProvider: React.FC = ({ children }) => {
   const [isWorking, setWorking] = React.useState(false)
   const [config, setConfig] = React.useState<Configuration>(initialConfig)
+  const [disableAutoShipmentCreation, setDisable] = React.useState(
+    initialConfig.disableAutoShipment,
+  )
 
   const prepareConfig = React.useCallback(
     async (accessToken: string, orgId: string): Promise<void> => {
@@ -52,13 +59,31 @@ const ConfigProvider: React.FC = ({ children }) => {
     [config],
   )
 
+  const onDisableAutoShipment = useCallback(async () => {
+    setDisable(!disableAutoShipmentCreation)
+
+    await doDisableAutoShipmentCreation(
+      !disableAutoShipmentCreation,
+      config.magentoToken,
+      config.baseUrl,
+    )
+  }, [disableAutoShipmentCreation, config.magentoToken, config.baseUrl])
+
   const contextValue = React.useMemo(
     () => ({
       isWorking,
+      disableAutoShipmentCreation,
       config,
       prepareConfig,
+      onDisableAutoShipment,
     }),
-    [config, isWorking, prepareConfig],
+    [
+      config,
+      isWorking,
+      disableAutoShipmentCreation,
+      prepareConfig,
+      onDisableAutoShipment,
+    ],
   )
 
   return (

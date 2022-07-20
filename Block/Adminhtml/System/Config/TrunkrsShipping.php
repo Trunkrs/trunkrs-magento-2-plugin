@@ -82,6 +82,14 @@ class TrunkrsShipping extends Field
     }
 
     /**
+     * @return bool
+     */
+    public function getDisableAutoShipment()
+    {
+        return $this->helper->getDisableAutoShipmentCreation();
+    }
+
+    /**
      * @param AbstractElement $element
      * @return string
      */

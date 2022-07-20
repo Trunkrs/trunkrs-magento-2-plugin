@@ -5,19 +5,24 @@ import constants from '../../shared/constants'
 import Check from '../vectors/Check'
 import Button from '../Button'
 
-import './DetailsPanel.scss'
 import Linkout from '../vectors/Linkout'
+import Switch from '../Switch'
+import './DetailsPanel.scss'
 
 interface DetailsPanelProps {
+  isDisableAutoShipment: boolean
   integrationId: string
   organizationId: string
   organizationName: string
+  onDisableShipment: () => void | Promise<void>
 }
 
 const DetailsPanel: React.FC<DetailsPanelProps> = ({
+  isDisableAutoShipment,
   integrationId,
   organizationId,
   organizationName,
+  onDisableShipment,
 }) => {
   const manageUrl = `${constants.portalBaseUrl}/${organizationId}/settings/integrations/${integrationId}`
 
@@ -42,6 +47,13 @@ const DetailsPanel: React.FC<DetailsPanelProps> = ({
           <h4>Organisatie naam:</h4>
           <p>{organizationName}</p>
         </div>
+      </div>
+      <div className="tr-mage-panelContent">
+        <h4>Geavanceerde opties</h4>
+        <br />
+        <Switch checked={isDisableAutoShipment} onChange={onDisableShipment}>
+          <p>Automatisch aanmaken van zendingen uitschakelen</p>
+        </Switch>
       </div>
       <div className="tr-mage-panelFooter">
         <div>
