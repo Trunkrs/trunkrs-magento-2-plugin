@@ -97,6 +97,15 @@ class Data extends AbstractHelper
         return $this->getConfigData('integration_details') ?? null;
     }
 
+    /**
+     * Retrieves disable auto shipment creation flag
+     * @return bool|false
+     */
+    public function getDisableAutoShipmentCreation()
+    {
+        return $this->getConfigData('disable_auto_shipment') ?? false;
+    }
+
     public static function getRateType(string $deliveryDate): string
     {
         $todayString = date('Y-m-d');
