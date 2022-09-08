@@ -211,7 +211,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      */
     public function getCountry()
     {
-        return $this->cart->getQuote()->getShippingAddress()->getCountry();
+        return $this->rateRequest ? $this->rateRequest->getDestCountryId() : null;
     }
 
     /**
@@ -220,7 +220,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      */
     public function getPostalCode()
     {
-        return $this->cart->getQuote()->getShippingAddress()->getPostcode();
+        return $this->rateRequest ? $this->rateRequest->getDestPostcode() : null;
     }
 
     /**
@@ -229,7 +229,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      */
     public function getTotalOrderAmount()
     {
-        return $this->cart->getQuote()->getGrandTotal();
+        return $this->rateRequest ? $this->rateRequest->getPackageValue() : null;
     }
 
     /**
@@ -264,9 +264,9 @@ class Shipping extends AbstractCarrier implements CarrierInterface
      */
     public function collectRates(RateRequest $request)
     {
-        $this->getTrunkrsShippingMethod();
-
         $this->rateRequest = $request;
+
+        $this->getTrunkrsShippingMethod();
 
         if (!$this->getIsConfigured()) {
             return false;
