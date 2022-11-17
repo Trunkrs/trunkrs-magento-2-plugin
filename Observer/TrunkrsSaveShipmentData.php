@@ -92,28 +92,26 @@ class TrunkrsSaveShipmentData implements ObserverInterface
 
         // check whether an order can be shipped or not
         if ($order->canShip()) {
-            if ($shippingName === self::TRUNKRS_SHIPPING_CODE) {
-                if (!$disableAutoShipment) {
-                    $orderShipment = $this->convertOrder->toShipment($order);
+            if ($shippingName === self::TRUNKRS_SHIPPING_CODE && !$disableAutoShipment) {
+                $orderShipment = $this->convertOrder->toShipment($order);
 
-                    foreach ($order->getAllItems() as $orderItem) {
-                        // Check virtual if item has qty and not virtual type
-                        if (!$orderItem->getQtyToShip() || $orderItem->getIsVirtual()) {
-                            continue;
-                        }
-
-                        $qty = $orderItem->getQtyToShip();
-                        $shipmentItem = $this->convertOrder->itemToShipmentItem($orderItem)->setQty($qty);
-
-                        $orderShipment->addItem($shipmentItem);
+                foreach ($order->getAllItems() as $orderItem) {
+                    // Check virtual if item has qty and not virtual type
+                    if (!$orderItem->getQtyToShip() || $orderItem->getIsVirtual()) {
+                        continue;
                     }
 
-                    $orderShipment->register();
+                    $qty = $orderItem->getQtyToShip();
+                    $shipmentItem = $this->convertOrder->itemToShipmentItem($orderItem)->setQty($qty);
 
-                    // Save created Order Shipment
-                    $orderShipment->save();
-                    $orderShipment->getOrder()->save();
+                    $orderShipment->addItem($shipmentItem);
                 }
+
+                $orderShipment->register();
+
+                // Save created Order Shipment
+                $orderShipment->save();
+                $orderShipment->getOrder()->save();
 
                 try {
 
@@ -147,24 +145,22 @@ class TrunkrsSaveShipmentData implements ObserverInterface
                         'json' => ['shipments' => [$singleShipmentBody]]
                     ]);
 
-                    if (!$disableAutoShipment) {
-                        $trunkrsObj = json_decode($response->getBody());
-                        $trunkrsNumber = $trunkrsObj->success[0]->trunkrsNumber;
-                        $labelUrl = $trunkrsObj->success[0]->labelUrl;
+                    $trunkrsObj = json_decode($response->getBody());
+                    $trunkrsNumber = $trunkrsObj->success[0]->trunkrsNumber;
+                    $labelUrl = $trunkrsObj->success[0]->labelUrl;
 
-                        $orderShipment->save();
+                    $orderShipment->save();
 
-                        $track = $this->trackFactory->create();
-                        $track->setCarrierCode(self::CARRIER_CODE);
-                        $track->setTitle(Shipping::TRUNKRS);
-                        $track->setTrackNumber($trunkrsNumber);
+                    $track = $this->trackFactory->create();
+                    $track->setCarrierCode(self::CARRIER_CODE);
+                    $track->setTitle(Shipping::TRUNKRS);
+                    $track->setTrackNumber($trunkrsNumber);
 
-                        $orderShipment->addTrack($track)
-                            ->setShippingAddressId($trunkrsNumber)
-                            ->setShippingLabel(file_get_contents($labelUrl));
+                    $orderShipment->addTrack($track)
+                        ->setShippingAddressId($trunkrsNumber)
+                        ->setShippingLabel(file_get_contents($labelUrl));
 
-                        $orderShipment->save();
-                    }
+                    $orderShipment->save();
 
                     return $response;
                 } catch (\Exception $e) {
