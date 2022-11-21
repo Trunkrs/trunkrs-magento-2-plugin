@@ -78,6 +78,8 @@ class TrunkrsShipmentSaveAfter implements ObserverInterface
         $shippingData = $order->getShippingAddress();
         $orderReference = $order->getIncrementId();
 
+        $intendedDeliveryDate = $order->getTrunkrsDeliveryDate();
+
         if (!$this->registry->registry('hasShipped')) {
             if ($shippingName === self::TRUNKRS_SHIPPING_CODE && $disableAutoShipment) {
                 $this->registry->register('hasShipped', true);
