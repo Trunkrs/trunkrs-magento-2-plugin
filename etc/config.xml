@@ -5,7 +5,8 @@
         <carriers>
             <trunkrsShipping>
                 <model>Trunkrs\Carrier\Model\Carrier\Shipping</model>
-            </trunkrsShipping>
+	        <integration_details>{}</integration_details>
+	    </trunkrsShipping>
         </carriers>
     </default>
 </config>
