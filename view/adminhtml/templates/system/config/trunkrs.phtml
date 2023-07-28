@@ -24,14 +24,14 @@ echo "<div id='trunkrs-app'></div>";
         'accessToken' => $block->getAccessToken(),
         'baseUrl' => $block->getBaseUrl(),
         'domainName' => parse_url($block->getBaseUrl())['host'],
-        'details' => json_decode($block->getIntegrationDetails()),
+        'details' => json_decode($block->getIntegrationDetails() ?? '{}'),
         'magentoToken' => $block->getMagentoToken(),
         'metaBag' => [
             'magentoVersion' => $block->getMagentoVersion(),
             'browserInfo' => $_SERVER['HTTP_USER_AGENT'],
             'phpVersion' => phpversion(),
             'phpExtensions' => get_loaded_extensions(),
-            'pluginVersion' => 'v2.1.4'
+            'pluginVersion' => 'v2.1.5'
         ],
         'disableAutoShipment' => $block->getDisableAutoShipment()
     ]);
