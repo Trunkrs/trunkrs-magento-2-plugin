@@ -26,7 +26,7 @@ module.exports = {
 
     output: {
         path: path.join(__dirname, '..', 'view/adminhtml/web/js'),
-        filename: 'trunkrs.bundle.js',
+        filename: 'trunkrs.bundle.min.js',
     },
 
     devServer: {
