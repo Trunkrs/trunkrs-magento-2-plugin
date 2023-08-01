@@ -1,5 +1,5 @@
 const config = {
     paths: {
-        "react-app": "Trunkrs_Carrier/js/trunkrs.bundle"
+        "react-app": "Trunkrs_Carrier/js/trunkrs.bundle.min"
     }
 };
