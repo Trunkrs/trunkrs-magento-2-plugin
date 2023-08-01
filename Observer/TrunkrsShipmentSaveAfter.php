@@ -131,6 +131,7 @@ class TrunkrsShipmentSaveAfter implements ObserverInterface
                         ->setShippingLabel(file_get_contents($labelUrl));
 
                     $shipment->save();
+                    $order->setStatus('complete');
                 } catch (\Exception $e) {
                     $this->logger->critical($e->getMessage());
                     throw new \Magento\Framework\Exception\LocalizedException(
