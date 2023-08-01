@@ -104,7 +104,7 @@ class TrunkrsShipmentSaveAfter implements ObserverInterface
                         ]
                     ];
 
-                    if(!empty($intendedDeliveryDate)) {
+                    if(!$disableAutoShipment && !empty($intendedDeliveryDate)) {
                         $shipmentBody['intendedDeliveryDate'] = $intendedDeliveryDate;
                     }
 
