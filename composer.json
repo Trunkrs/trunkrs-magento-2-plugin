@@ -7,12 +7,16 @@
       "homepage": "https://trunkrs.nl"
     }
   ],
+  "require": {
+    "setasign/fpdf": "^1.8.2",
+    "setasign/fpdi": "^2.3.2"
+  },
   "keywords": [
     "trunkrs magento 2 plugin",
     "trunkrs magento 2 shipping method"
   ],
   "type": "magento2-module",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "license": [
     "MIT"
   ],
