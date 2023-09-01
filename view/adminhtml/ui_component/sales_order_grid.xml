@@ -6,7 +6,7 @@
                 <settings>
                     <url path="trunkrs/order/printLabelAndPackingSlips"/>
                     <type>trunkrs_print_shipping_label_and_packing_slips</type>
-                    <label translate="true">Trunkrs - Print packing slip &amp; shipping Label</label>
+                    <label translate="true">Trunkrs - Print packing slip &amp; shipping label</label>
                 </settings>
             </action>
         </massaction>

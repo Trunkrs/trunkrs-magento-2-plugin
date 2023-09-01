@@ -124,9 +124,9 @@ class PrintLabelAndPackingSlips extends LabelAbstract
             }
         }
 
-        if (empty($this->orderIds)) {
+        if (empty($this->orderIds) || empty($this->labels)) {
             $this->messageManager->addErrorMessage(
-                __('No pdf generated. Trunkrs shipment not found.')
+                __('No document generated. Trunkrs shipment not found.')
             );
             return $this->_redirect($this->_redirect->getRefererUrl());
         }
