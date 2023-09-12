@@ -12,6 +12,9 @@ use Trunkrs\Carrier\Controller\Adminhtml\PdfDownload as GetPdf;
 
 abstract class LabelAbstract extends Action
 {
+    const TRUNKRS_SHIPPING_CODE = 'trunkrsShipping_trunkrsShipping';
+    const TRUNKRS_LABEL_IN_PACKINGSLIPS = 'trunkrs_packingslips';
+    const CARRIER_CODE = 'trunkrsShipping';
     /**
      * @var GetLabels
      */
@@ -42,7 +45,7 @@ abstract class LabelAbstract extends Action
         Context $context,
         GetLabels $getLabels,
         GetPdf $getPdf,
-        GetPackingslip $getPackingSlip,
+        GetPackingslip $getPackingSlip
     ) {
         parent::__construct($context);
 
