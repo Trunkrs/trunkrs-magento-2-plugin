@@ -4,9 +4,12 @@ namespace Trunkrs\Carrier\Controller\Adminhtml\Order;
 
 use Magento\Backend\App\Action\Context;
 use Magento\Framework\App\Response\Http\FileFactory;
+use Magento\Framework\App\ResponseInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NotFoundException;
 use Magento\Sales\Api\Data\ShipmentInterface;
+use Magento\Sales\Model\Convert\Order;
+use Magento\Sales\Model\Order\Shipment;
 use Magento\Sales\Model\ResourceModel\Order\Shipment\CollectionFactory;
 use Magento\Sales\Model\ResourceModel\Order\CollectionFactory as OrderCollectionFactory;
 use Magento\Shipping\Model\Shipping\LabelGenerator;
@@ -17,18 +20,24 @@ use Psr\Log\LoggerInterface;
 use setasign\Fpdi\PdfParser\PdfParserException;
 use Trunkrs\Carrier\Controller\Adminhtml\LabelAbstract;
 use Trunkrs\Carrier\Controller\Adminhtml\PdfDownload as GetPdf;
+use Trunkrs\Carrier\Helper\Data;
 use Trunkrs\Carrier\Service\Shipment\Labelling\GetLabels;
 use Trunkrs\Carrier\Service\Shipment\Packingslip\GetPackingslip;
 
-class PrintLabelAndPackingSlips extends LabelAbstract
+class CreateShipmentAndPrintPackingSlips extends LabelAbstract
 {
-    const TRUNKRS_SHIPPING_CODE = 'trunkrsShipping_trunkrsShipping';
-    const TRUNKRS_LABEL_IN_PACKINGSLIPS = 'trunkrs_packingslips';
-
     /**
      * @var array
      */
     protected $orderIds = [];
+    /**
+     * @param Data $helper
+     */
+    public $helper;
+    /**
+     * @var Order
+     */
+    protected $convertOrder;
     /**
      * @var OrderCollectionFactory
      */
@@ -64,6 +73,8 @@ class PrintLabelAndPackingSlips extends LabelAbstract
 
     /**
      * @param Context $context
+     * @param Data $helper
+     * @param Order $convertOrder
      * @param GetLabels $getLabels
      * @param GetPdf $getPdf
      * @param GetPackingslip $getPackingSlip
@@ -78,6 +89,8 @@ class PrintLabelAndPackingSlips extends LabelAbstract
      */
     public function __construct(
         Context $context,
+        Data $helper,
+        Order $convertOrder,
         GetLabels $getLabels,
         GetPdf $getPdf,
         GetPackingslip $getPackingSlip,
@@ -88,8 +101,10 @@ class PrintLabelAndPackingSlips extends LabelAbstract
         ShipmentRepositoryInterface $shipmentRepository,
         SearchCriteriaBuilder $searchCriteriaBuilder,
         LoggerInterface $logger,
-        Filter $filter,
+        Filter $filter
     ) {
+        $this->helper = $helper;
+        $this->convertOrder = $convertOrder;
         $this->collectionFactory = $collectionFactory;
         $this->orderCollectionFactory = $orderCollectionFactory;
         $this->fileFactory = $fileFactory;
@@ -102,8 +117,8 @@ class PrintLabelAndPackingSlips extends LabelAbstract
     }
 
     /**
-     * @return \Magento\Framework\App\ResponseInterface|\Magento\Framework\Controller\ResultInterface|null
-     * @throws NotFoundException|PdfParserException|\Zend_Pdf_Exception
+     * @return ResponseInterface|null
+     * @throws NotFoundException|PdfParserException|\Zend_Pdf_Exception|LocalizedException
      */
     public function execute()
     {
@@ -117,7 +132,7 @@ class PrintLabelAndPackingSlips extends LabelAbstract
         }
 
         foreach ($collection as $order) {
-            $trunkrsShipment = $order->getShippingMethod() === $this::TRUNKRS_SHIPPING_CODE;
+            $trunkrsShipment = $order->getShippingMethod() === self::TRUNKRS_SHIPPING_CODE;
             if($trunkrsShipment) {
                 $this->orderIds[] = $order->getId();
                 $this->handleShipmentDataFromOrder($order);
@@ -126,7 +141,7 @@ class PrintLabelAndPackingSlips extends LabelAbstract
 
         if (empty($this->orderIds) || empty($this->labels)) {
             $this->messageManager->addErrorMessage(
-                __('No document generated. Trunkrs shipment not found.')
+                __('No document generated. Selected order/s not for Trunkrs.')
             );
             return $this->_redirect($this->_redirect->getRefererUrl());
         }
@@ -138,25 +153,67 @@ class PrintLabelAndPackingSlips extends LabelAbstract
      * @param $order
      * @return void
      * @throws NotFoundException|PdfParserException|\Zend_Pdf_Exception
+     * @throws LocalizedException
      */
     private function handleShipmentDataFromOrder($order)
     {
         $shipments = $this->getShipmentDataByOrderId($order->getId());
 
         if (!$shipments) {
-            return;
+            // create Trunkrs shipment
+            // check whether an order can be shipped or not
+            if ($order->canShip()) {
+                $shippingName = $order->getShippingMethod();
+                if ($shippingName === self::TRUNKRS_SHIPPING_CODE) {
+                    $shipments = $this->createShipment($order);
+                }
+            }
         }
 
         $this->loadLabels($shipments);
     }
 
     /**
+     * @param $order
+     * @return Shipment
+     * @throws LocalizedException
+     */
+    private function createShipment($order)
+    {
+        $orderShipment = $this->convertOrder->toShipment($order);
+        foreach ($order->getAllItems() as $orderItem) {
+            // Check virtual if item has qty and not virtual type
+            if (!$orderItem->getQtyToShip() || $orderItem->getIsVirtual()) {
+                continue;
+            }
+
+            $qty = $orderItem->getQtyToShip();
+            $shipmentItem = $this->convertOrder->itemToShipmentItem($orderItem)->setQty($qty);
+
+            $orderShipment->addItem($shipmentItem);
+        }
+
+        $orderShipment->register();
+
+        $orderShipment->getOrder()->setState(\Magento\Sales\Model\Order::STATE_PROCESSING);
+        $orderShipment->getOrder()->setStatus('processing');
+        $orderShipment->getOrder()->save();
+
+        // save created Order Shipment
+        $orderShipment->save();
+
+        $this->helper->sendTrunkrsShipment($order, $orderShipment);
+
+        return $orderShipment;
+    }
+
+    /**
      * Shipment by Order id
      *
-     * @param int $orderId
+     * @param $orderId
      * @return ShipmentInterface[]|null
      */
-    public function getShipmentDataByOrderId(int $orderId)
+    public function getShipmentDataByOrderId($orderId)
     {
         $searchCriteria = $this->searchCriteriaBuilder
             ->addFilter('order_id', $orderId)->create();

@@ -2,11 +2,11 @@
 <listing xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
     <listingToolbar name="listing_top">
         <massaction name="listing_massaction">
-            <action name="trunkrs_print_shipping_label_and_packing_slips">
+            <action name="trunkrs_create_shipment_and_print_packing_slips">
                 <settings>
-                    <url path="trunkrs/order/printLabelAndPackingSlips"/>
-                    <type>trunkrs_print_shipping_label_and_packing_slips</type>
-                    <label translate="true">Trunkrs - Print packing slip &amp; shipping label</label>
+                    <url path="#" />
+                    <type>trunkrs_create_shipment_and_print_packing_slips</type>
+                    <label translate="true">Trunkrs - create shipment &amp; print packing slip</label>
                 </settings>
             </action>
         </massaction>

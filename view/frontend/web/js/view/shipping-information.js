@@ -46,8 +46,8 @@ define([
          * @return {String}
          */
         getShippingPrice: function () {
-            var price;
-            price = quote.totals()['shipping_amount'];
+            let price;
+            price = quote.totals()['shipping_incl_tax'];
             return priceUtils.formatPrice(price, quote.getPriceFormat());
         },
 
