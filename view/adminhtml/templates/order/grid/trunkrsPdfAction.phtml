@@ -1,0 +1,60 @@
+<?php
+/* @var $block TrunkrsPdfAction */
+
+use Trunkrs\Carrier\Block\Adminhtml\Grid\Order\TrunkrsPdfAction;
+?>
+<script type="text/javascript">
+    require(['ko', 'jquery', 'Trunkrs_Carrier/js/shipment/grid/trunkrsDownload'], function (ko, $, download) {
+        var koElement;
+
+        jQuery('body').on('click', '.action-menu .action-menu-item', function () {
+            var element = getTrunkrsAction(this);
+            var downloadUrl = '<?= $block->escapeHtml($block->getTrunkrsDownloadActionUrl()); ?>';
+            if (element !== null) {
+                download(downloadUrl, getFormData(this));
+            }
+        });
+
+        /**
+         * Retrieve the Knockout scope for the element.
+         */
+        function getKoScope(element) {
+            return ko.dataFor(element);
+        }
+
+        /**
+         * Build the formdata
+         *
+         * @param element
+         * @returns object
+         */
+        function getFormData(element) {
+            var selections = getKoScope(element.parentElement.parentNode).getSelections();
+            return {
+                namespace: 'sales_order_grid',
+                selected: selections.selected
+            };
+        }
+
+        /**
+         * Check if the current selected action is the Trunkrs action, and if so, return it.
+         *
+         * @param element
+         * @returns null|object
+         */
+        function getTrunkrsAction(element) {
+            koElement = getKoScope(element);
+            const selections = getKoScope(element.parentElement.parentNode).getSelections();
+
+            if(selections.selected.length <= 0) {
+                return null;
+            }
+
+            if (koElement.type !== undefined && koElement.type.toLowerCase().indexOf('trunkrs') !== -1) {
+                return koElement;
+            }
+
+            return null;
+        }
+    });
+</script>

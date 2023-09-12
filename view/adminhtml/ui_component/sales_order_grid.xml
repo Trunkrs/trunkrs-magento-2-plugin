@@ -4,7 +4,7 @@
         <massaction name="listing_massaction">
             <action name="trunkrs_create_shipment_and_print_packing_slips">
                 <settings>
-                    <url path="trunkrs/order/createShipmentAndPrintPackingSlips"/>
+                    <url path="#" />
                     <type>trunkrs_create_shipment_and_print_packing_slips</type>
                     <label translate="true">Trunkrs - create shipment &amp; print packing slip</label>
                 </settings>
