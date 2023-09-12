@@ -3,6 +3,7 @@
 namespace Trunkrs\Carrier\Observer;
 
 use Magento\Framework\Event\ObserverInterface;
+use Magento\Sales\Model\Order;
 use Trunkrs\Carrier\Helper\Data;
 use Trunkrs\Carrier\Model\Carrier\Shipping;
 
@@ -111,6 +112,9 @@ class TrunkrsSaveShipmentData implements ObserverInterface
 
                 // Save created Order Shipment
                 $orderShipment->save();
+
+                $orderShipment->getOrder()->setState(Order::STATE_PROCESSING);
+                $orderShipment->getOrder()->setStatus('processing');
                 $orderShipment->getOrder()->save();
 
                 try {
@@ -148,8 +152,6 @@ class TrunkrsSaveShipmentData implements ObserverInterface
                     $trunkrsObj = json_decode($response->getBody());
                     $trunkrsNumber = $trunkrsObj->success[0]->trunkrsNumber;
                     $labelUrl = $trunkrsObj->success[0]->labelUrl;
-
-                    $orderShipment->save();
 
                     $track = $this->trackFactory->create();
                     $track->setCarrierCode(self::CARRIER_CODE);

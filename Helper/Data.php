@@ -7,7 +7,11 @@ use DateTimeZone;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Helper\AbstractHelper;
 use Magento\Framework\App\Helper\Context;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Sales\Api\Data\ShipmentTrackInterfaceFactory;
 use Magento\Store\Model\ScopeInterface;
+use Psr\Log\LoggerInterface;
+use Trunkrs\Carrier\Model\Carrier\Shipping;
 
 class Data extends AbstractHelper
 {
@@ -17,13 +21,25 @@ class Data extends AbstractHelper
      * @var ScopeConfigInterface
      */
     protected $scopeConfig;
+    /**
+     * @var ShipmentTrackInterfaceFactory
+     */
+    private $trackFactory;
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
 
     public function __construct(
         Context $context,
-        ScopeConfigInterface $scopeConfig
+        ScopeConfigInterface $scopeConfig,
+        ShipmentTrackInterfaceFactory $trackFactory,
+        LoggerInterface $logger
     )
     {
         $this->scopeConfig = $scopeConfig;
+        $this->trackFactory = $trackFactory;
+        $this->logger = $logger;
         parent::__construct($context);
     }
 
@@ -144,5 +160,80 @@ class Data extends AbstractHelper
         $result->setTimezone(new DateTimeZone('Europe/Amsterdam'));
 
         return $result;
+    }
+
+    /**
+     * @param $order
+     * @param $shipment
+     * @return void
+     * @throws LocalizedException
+     */
+    public function sendTrunkrsShipment($order, $shipment)
+    {
+        try {
+            // post shipment to Shipping portal
+            $urlHost = $this->getCreateShipmentEndpoint();
+            $client = new \GuzzleHttp\Client();
+
+            $addressData  = $order->getShippingAddress();
+
+            $singleShipmentBody = [
+                'reference' => $order->getIncrementId(),
+                'recipient' => [
+                    'name' =>  $order->getCustomerName(),
+                    'email' => $addressData->getEmail(),
+                    'phoneNumber' => $addressData->getTelephone(),
+                    'location' => [
+                        'address' => implode(' ', $addressData->getStreet()),
+                        'postalCode' => $addressData->getPostcode(),
+                        'city' => $addressData->getCity(),
+                        'country' => $addressData->getCountryId()
+                    ]
+                ]
+            ];
+
+            $intendedDeliveryDate = $order->getTrunkrsDeliveryDate();
+            if(!empty($intendedDeliveryDate)) {
+                $singleShipmentBody['intendedDeliveryDate'] = $intendedDeliveryDate;
+            }
+
+            $response = $client->post($urlHost, [
+                'headers' => [
+                    'Authorization' => sprintf('Bearer %s', $this->getAccessToken()),
+                    'Content-Type' => 'application/json; charset=utf-8'],
+                'json' => ['shipments' => [$singleShipmentBody]]
+            ]);
+
+            $trunkrsObj = json_decode($response->getBody());
+            $trunkrsNumber = $trunkrsObj->success[0]->trunkrsNumber;
+            $labelUrl = $trunkrsObj->success[0]->labelUrl;
+
+            $this->setTrack($shipment, $trunkrsNumber, $labelUrl);
+
+            $shipment->save();
+        } catch (\Exception $e) {
+            $this->logger->critical($e->getMessage());
+            throw new LocalizedException(
+                __($e->getMessage())
+            );
+        }
+    }
+
+    /**
+     * @param $shipment
+     * @param $trunkrsNumber
+     * @param $labelUrl
+     * @return void
+     */
+    private function setTrack($shipment, $trunkrsNumber, $labelUrl)
+    {
+        $track = $this->trackFactory->create();
+        $track->setCarrierCode(self::CARRIER_CODE);
+        $track->setTitle(Shipping::TRUNKRS);
+        $track->setTrackNumber($trunkrsNumber);
+
+        $shipment->addTrack($track)
+            ->setShippingAddressId($trunkrsNumber)
+            ->setShippingLabel(file_get_contents($labelUrl));
     }
 }

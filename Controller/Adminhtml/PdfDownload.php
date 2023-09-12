@@ -25,7 +25,7 @@ class PdfDownload
      */
     public function __construct(
         FileFactory         $fileFactory,
-        PackingslipGenerate $packingslipGenerator,
+        PackingslipGenerate $packingslipGenerator
     )
     {
         $this->fileFactory = $fileFactory;

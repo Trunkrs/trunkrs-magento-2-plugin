@@ -8,15 +8,17 @@
     }
   ],
   "require": {
-    "setasign/fpdf": "^1.8.2",
-    "setasign/fpdi": "^2.3.2"
+    "php": "~7.3|~7.4|~8.1|~8.2",
+    "ext-soap": "*",
+    "setasign/fpdf": "^1.8",
+    "setasign/fpdi": "^2.4"
   },
   "keywords": [
     "trunkrs magento 2 plugin",
     "trunkrs magento 2 shipping method"
   ],
   "type": "magento2-module",
-  "version": "2.3.1",
+  "version": "2.4.0",
   "license": [
     "MIT"
   ],

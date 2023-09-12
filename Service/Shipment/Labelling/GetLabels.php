@@ -16,7 +16,7 @@ class GetLabels
      * @param ShipmentRepositoryInterface $shipmentRepository
      */
     public function __construct(
-        ShipmentRepositoryInterface $shipmentRepository,
+        ShipmentRepositoryInterface $shipmentRepository
     )
     {
         $this->shipmentRepository = $shipmentRepository;
