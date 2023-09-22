@@ -131,8 +131,14 @@ class Shipping extends AbstractCarrier implements CarrierInterface
             $urlHost = $this->getShipmentMethodEndpoint();
             $client = new Client();
 
+            if(!empty($postalCode)) {
+                $trunkrsEndpoint = $urlHost . "?country=" . $country . "&postalCode=" . $postalCode. "&orderValue=" . $totalAmount;
+            } else {
+                $trunkrsEndpoint = $urlHost . "?country=" . $country . "&orderValue=" . $totalAmount;
+            }
+
             $request = $client->get(
-                $urlHost . "?country=" . $country . "&postalCode=" . $postalCode. "&orderValue=" . $totalAmount, [
+                $trunkrsEndpoint, [
                 'headers' => [
                     'Authorization' => sprintf('Bearer %s', $this->getAccessToken()),
                     'Content-Type' => 'application/json; charset=utf-8'
@@ -207,7 +213,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
 
     /**
      * Retrieves customer country
-     * @return string
+     * @return string|null
      */
     public function getCountry()
     {
@@ -216,7 +222,7 @@ class Shipping extends AbstractCarrier implements CarrierInterface
 
     /**
      * Retrieves customer postcode
-     * @return string
+     * @return string|null
      */
     public function getPostalCode()
     {
