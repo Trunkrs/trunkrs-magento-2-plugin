@@ -135,10 +135,13 @@ class Barcode implements ItemsInterface
     {
         $position = [0, 0, 345, 220];
 
-        // Zend_PDF used BOTTOMLEFT as 0,0 and every point was 1/72 inch
-        $x = $this->zendPdfUnitsToMM($position[0]);
+        // Calculate the horizontal center position
+        $horizontalCenter = ($pageSize['width'] - $this->zendPdfUnitsToMM($position[2])) / 2;
+
+        // Zend_PDF used BOTTOM LEFT as 0,0 and every point was 1/72 inch
+        $x = $horizontalCenter;
         $y = $pageSize['height'] - $this->zendPdfUnitsToMM($position[3]);
-        $w = $this->zendPdfUnitsToMM($position[2]) - $x;
+        $w = $this->zendPdfUnitsToMM($position[2]);
         $h = $this->zendPdfUnitsToMM($position[3]) - $this->zendPdfUnitsToMM($position[1]);
 
         $tempAttachmentFile = $this->directoryList->getPath('var') . DIRECTORY_SEPARATOR . static::TMP_TRUNKRS_LABEL_PATH . '/' . uniqid('trunkrs-') . '.pdf';
