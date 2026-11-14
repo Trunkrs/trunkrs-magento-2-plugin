@@ -272,11 +272,11 @@ class Shipping extends AbstractCarrier implements CarrierInterface
     {
         $this->rateRequest = $request;
 
-        $this->getTrunkrsShippingMethod();
-
         if (!$this->getIsConfigured()) {
             return false;
         }
+
+        $this->getTrunkrsShippingMethod();
 
         /* do not show trunkrs shipping if selected shipping country is not NL|BE */
         if ($this->getCountry() !== "NL" && $this->getCountry() !== "BE") {
