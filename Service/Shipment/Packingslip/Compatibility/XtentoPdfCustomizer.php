@@ -4,7 +4,6 @@ namespace Trunkrs\Carrier\Service\Shipment\Packingslip\Compatibility;
 
 use Magento\Sales\Api\Data\ShipmentInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
-use Trunkrs\Carrier\Service\Shipment\Packingslip\Factory;
 
 class XtentoPdfCustomizer
 {
@@ -34,17 +33,16 @@ class XtentoPdfCustomizer
         OrderRepositoryInterface $orderRepository,
         DataHelperFactoryProxy   $dataHelper,
         GeneratePdfFactoryProxy  $pdfGenerator
-    )
-    {
+    ) {
         $this->orderRepository = $orderRepository;
         $this->dataHelper = $dataHelper;
         $this->pdfGenerator = $pdfGenerator;
     }
 
     /**
-     * @param Factory $factory
-     * @param ShipmentInterface $magentoShipment
+     * Generate the shipment PDF with Xtento.
      *
+     * @param ShipmentInterface $magentoShipment
      * @return mixed
      */
     public function getPdf(ShipmentInterface $magentoShipment)
@@ -66,6 +64,8 @@ class XtentoPdfCustomizer
     }
 
     /**
+     * Check whether Xtento shipment PDFs are enabled.
+     *
      * @return bool
      */
     public function isShipmentPdfEnabled()

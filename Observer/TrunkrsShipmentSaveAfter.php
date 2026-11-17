@@ -4,6 +4,7 @@ namespace Trunkrs\Carrier\Observer;
 
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
+use Magento\Framework\Filesystem\Io\File;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Message\ManagerInterface;
 use Magento\Framework\Registry;
@@ -17,10 +18,10 @@ use Trunkrs\Carrier\Helper\Data;
 
 class TrunkrsShipmentSaveAfter implements ObserverInterface
 {
-    const TRUNKRS_SHIPPING_CODE = 'trunkrsShipping_trunkrsShipping';
-    const CARRIER_CODE = 'trunkrsShipping';
+    public const TRUNKRS_SHIPPING_CODE = 'trunkrsShipping_trunkrsShipping';
+    public const CARRIER_CODE = 'trunkrsShipping';
     /**
-     * @param Data $helper
+     * @var Data
      */
     public $helper;
 
@@ -39,6 +40,9 @@ class TrunkrsShipmentSaveAfter implements ObserverInterface
      */
     protected $messageManager;
 
+    /**
+     * @var Registry
+     */
     protected $registry;
 
     /**
@@ -52,6 +56,11 @@ class TrunkrsShipmentSaveAfter implements ObserverInterface
     private $shipmentResource;
 
     /**
+     * @var File
+     */
+    private $ioFile;
+
+    /**
      * @param Data $helper
      * @param LoggerInterface $logger
      * @param ManagerInterface $messageManager
@@ -59,6 +68,7 @@ class TrunkrsShipmentSaveAfter implements ObserverInterface
      * @param Registry $registry
      * @param OrderResource $orderResource
      * @param ShipmentResource $shipmentResource
+     * @param File $ioFile
      */
     public function __construct(
         Data $helper,
@@ -67,7 +77,8 @@ class TrunkrsShipmentSaveAfter implements ObserverInterface
         ShipmentTrackInterfaceFactory $trackFactory,
         Registry $registry,
         OrderResource $orderResource,
-        ShipmentResource $shipmentResource
+        ShipmentResource $shipmentResource,
+        File $ioFile
     ) {
         $this->helper = $helper;
         $this->logger = $logger;
@@ -76,9 +87,12 @@ class TrunkrsShipmentSaveAfter implements ObserverInterface
         $this->registry = $registry;
         $this->orderResource = $orderResource;
         $this->shipmentResource = $shipmentResource;
+        $this->ioFile = $ioFile;
     }
 
     /**
+     * Send manually created shipments to Trunkrs.
+     *
      * @param Observer $observer
      * @return ManagerInterface|void
      * @throws LocalizedException
@@ -122,7 +136,7 @@ class TrunkrsShipmentSaveAfter implements ObserverInterface
                         ]
                     ];
 
-                    if(!$disableAutoShipment && !empty($intendedDeliveryDate)) {
+                    if (!$disableAutoShipment && !empty($intendedDeliveryDate)) {
                         $shipmentBody['intendedDeliveryDate'] = $intendedDeliveryDate;
                     }
 
@@ -148,7 +162,7 @@ class TrunkrsShipmentSaveAfter implements ObserverInterface
 
                     $shipment->addTrack($track)
                         ->setShippingAddressId($trunkrsNumber)
-                        ->setShippingLabel(file_get_contents($labelUrl));
+                        ->setShippingLabel($this->ioFile->read($labelUrl));
 
                     $this->shipmentResource->save($shipment);
                 } catch (\Exception $e) {
