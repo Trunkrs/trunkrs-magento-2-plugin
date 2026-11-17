@@ -4,8 +4,8 @@ namespace Trunkrs\Carrier\Observer;
 
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Sales\Model\Order;
-use Magento\Sales\Api\OrderRepositoryInterface;
-use Magento\Sales\Api\ShipmentRepositoryInterface;
+use Magento\Sales\Model\ResourceModel\Order as OrderResource;
+use Magento\Sales\Model\ResourceModel\Order\Shipment as ShipmentResource;
 use Trunkrs\Carrier\Helper\Data;
 use Trunkrs\Carrier\Model\Carrier\Shipping;
 
@@ -19,14 +19,14 @@ class TrunkrsSaveShipmentData implements ObserverInterface
     public $helper;
 
     /**
-     * @var \Magento\Sales\Api\OrderRepositoryInterface
+     * @var OrderResource
      */
-    protected $orderRepository;
+    protected $orderResource;
 
     /**
-     * @var ShipmentRepositoryInterface
+     * @var ShipmentResource
      */
-    private $shipmentRepository;
+    private $shipmentResource;
 
     /**
      * @var \Magento\Sales\Model\Convert\Order
@@ -61,8 +61,8 @@ class TrunkrsSaveShipmentData implements ObserverInterface
      * @param \Magento\Sales\Api\Data\ShipmentTrackInterfaceFactory $trackFactory
      * @param \Magento\Checkout\Model\Cart $cart
      * @param \Psr\Log\LoggerInterface $logger
-     * @param OrderRepositoryInterface $orderRepository
-     * @param ShipmentRepositoryInterface $shipmentRepository
+     * @param OrderResource $orderResource
+     * @param ShipmentResource $shipmentResource
      */
     public function __construct(
         Data $helper,
@@ -71,8 +71,8 @@ class TrunkrsSaveShipmentData implements ObserverInterface
         \Magento\Sales\Api\Data\ShipmentTrackInterfaceFactory $trackFactory,
         \Magento\Checkout\Model\Cart $cart,
         \Psr\Log\LoggerInterface $logger,
-        OrderRepositoryInterface $orderRepository,
-        ShipmentRepositoryInterface $shipmentRepository
+        OrderResource $orderResource,
+        ShipmentResource $shipmentResource
     ) {
         $this->helper = $helper;
         $this->messageManager = $messageManager;
@@ -80,8 +80,8 @@ class TrunkrsSaveShipmentData implements ObserverInterface
         $this->trackFactory = $trackFactory;
         $this->cart = $cart;
         $this->logger = $logger;
-        $this->orderRepository = $orderRepository;
-        $this->shipmentRepository = $shipmentRepository;
+        $this->orderResource = $orderResource;
+        $this->shipmentResource = $shipmentResource;
     }
 
     /**
@@ -124,11 +124,11 @@ class TrunkrsSaveShipmentData implements ObserverInterface
                 $orderShipment->register();
 
                 // Save created Order Shipment
-                $this->shipmentRepository->save($orderShipment);
+                $this->shipmentResource->save($orderShipment);
 
                 $orderShipment->getOrder()->setState(Order::STATE_PROCESSING);
                 $orderShipment->getOrder()->setStatus('processing');
-                $this->orderRepository->save($orderShipment->getOrder());
+                $this->orderResource->save($orderShipment->getOrder());
 
                 try {
 
@@ -175,7 +175,7 @@ class TrunkrsSaveShipmentData implements ObserverInterface
                         ->setShippingAddressId($trunkrsNumber)
                         ->setShippingLabel(file_get_contents($labelUrl));
 
-                    $this->shipmentRepository->save($orderShipment);
+                    $this->shipmentResource->save($orderShipment);
 
                     return $response;
                 } catch (\Exception $e) {

@@ -9,8 +9,8 @@ use Magento\Framework\Message\ManagerInterface;
 use Magento\Framework\Registry;
 use Magento\Sales\Api\Data\ShipmentTrackInterfaceFactory;
 use Magento\Sales\Model\Order;
-use Magento\Sales\Api\OrderRepositoryInterface;
-use Magento\Sales\Api\ShipmentRepositoryInterface;
+use Magento\Sales\Model\ResourceModel\Order as OrderResource;
+use Magento\Sales\Model\ResourceModel\Order\Shipment as ShipmentResource;
 use Psr\Log\LoggerInterface;
 use Trunkrs\Carrier\Model\Carrier\Shipping;
 use Trunkrs\Carrier\Helper\Data;
@@ -42,14 +42,14 @@ class TrunkrsShipmentSaveAfter implements ObserverInterface
     protected $registry;
 
     /**
-     * @var OrderRepositoryInterface
+     * @var OrderResource
      */
-    private $orderRepository;
+    private $orderResource;
 
     /**
-     * @var ShipmentRepositoryInterface
+     * @var ShipmentResource
      */
-    private $shipmentRepository;
+    private $shipmentResource;
 
     /**
      * @param Data $helper
@@ -57,8 +57,8 @@ class TrunkrsShipmentSaveAfter implements ObserverInterface
      * @param ManagerInterface $messageManager
      * @param ShipmentTrackInterfaceFactory $trackFactory
      * @param Registry $registry
-     * @param OrderRepositoryInterface $orderRepository
-     * @param ShipmentRepositoryInterface $shipmentRepository
+     * @param OrderResource $orderResource
+     * @param ShipmentResource $shipmentResource
      */
     public function __construct(
         Data $helper,
@@ -66,16 +66,16 @@ class TrunkrsShipmentSaveAfter implements ObserverInterface
         ManagerInterface $messageManager,
         ShipmentTrackInterfaceFactory $trackFactory,
         Registry $registry,
-        OrderRepositoryInterface $orderRepository,
-        ShipmentRepositoryInterface $shipmentRepository
+        OrderResource $orderResource,
+        ShipmentResource $shipmentResource
     ) {
         $this->helper = $helper;
         $this->logger = $logger;
         $this->messageManager = $messageManager;
         $this->trackFactory = $trackFactory;
         $this->registry = $registry;
-        $this->orderRepository = $orderRepository;
-        $this->shipmentRepository = $shipmentRepository;
+        $this->orderResource = $orderResource;
+        $this->shipmentResource = $shipmentResource;
     }
 
     /**
@@ -139,7 +139,7 @@ class TrunkrsShipmentSaveAfter implements ObserverInterface
 
                     $order->setState(Order::STATE_PROCESSING);
                     $order->setStatus('processing');
-                    $this->orderRepository->save($order);
+                    $this->orderResource->save($order);
 
                     $track = $this->trackFactory->create();
                     $track->setCarrierCode(self::CARRIER_CODE);
@@ -150,7 +150,7 @@ class TrunkrsShipmentSaveAfter implements ObserverInterface
                         ->setShippingAddressId($trunkrsNumber)
                         ->setShippingLabel(file_get_contents($labelUrl));
 
-                    $this->shipmentRepository->save($shipment);
+                    $this->shipmentResource->save($shipment);
                 } catch (\Exception $e) {
                     $this->logger->critical($e->getMessage());
                     throw new \Magento\Framework\Exception\LocalizedException(

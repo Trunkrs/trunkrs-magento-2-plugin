@@ -16,7 +16,8 @@ use Magento\Shipping\Model\Shipping\LabelGenerator;
 use Magento\Ui\Component\MassAction\Filter;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Sales\Api\ShipmentRepositoryInterface;
-use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Sales\Model\ResourceModel\Order\Shipment as ShipmentResource;
+use Magento\Sales\Model\ResourceModel\Order as OrderResource;
 use Psr\Log\LoggerInterface;
 use setasign\Fpdi\PdfParser\PdfParserException;
 use Trunkrs\Carrier\Controller\Adminhtml\LabelAbstract;
@@ -73,9 +74,14 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
     private $shipmentRepository;
 
     /**
-     * @var OrderRepositoryInterface
+     * @var OrderResource
      */
-    private $orderRepository;
+    private $orderResource;
+
+    /**
+     * @var ShipmentResource
+     */
+    private $shipmentResource;
 
     /**
      * @param Context $context
@@ -92,7 +98,8 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
      * @param SearchCriteriaBuilder $searchCriteriaBuilder
      * @param LoggerInterface $logger
      * @param Filter $filter
-     * @param OrderRepositoryInterface $orderRepository
+     * @param OrderResource $orderResource
+     * @param ShipmentResource $shipmentResource
      */
     public function __construct(
         Context $context,
@@ -109,7 +116,8 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
         SearchCriteriaBuilder $searchCriteriaBuilder,
         LoggerInterface $logger,
         Filter $filter,
-        OrderRepositoryInterface $orderRepository
+        OrderResource $orderResource,
+        ShipmentResource $shipmentResource
     ) {
         $this->helper = $helper;
         $this->convertOrder = $convertOrder;
@@ -121,7 +129,8 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->logger = $logger;
         $this->filter = $filter;
-        $this->orderRepository = $orderRepository;
+        $this->orderResource = $orderResource;
+        $this->shipmentResource = $shipmentResource;
         parent::__construct($context, $getLabels, $getPdf, $getPackingSlip);
     }
 
@@ -206,10 +215,10 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
 
         $orderShipment->getOrder()->setState(\Magento\Sales\Model\Order::STATE_PROCESSING);
         $orderShipment->getOrder()->setStatus('processing');
-        $this->orderRepository->save($orderShipment->getOrder());
+        $this->orderResource->save($orderShipment->getOrder());
 
         // save created Order Shipment
-        $this->shipmentRepository->save($orderShipment);
+        $this->shipmentResource->save($orderShipment);
 
         $this->helper->sendTrunkrsShipment($order, $orderShipment);
 
