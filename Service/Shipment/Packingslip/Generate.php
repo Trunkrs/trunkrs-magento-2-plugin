@@ -6,7 +6,7 @@ use setasign\Fpdi\Fpdi;
 use setasign\Fpdi\PdfParser\PdfParserException;
 use setasign\Fpdi\PdfParser\StreamReader;
 use setasign\Fpdi\PdfReader\PdfReaderException;
-use PSR\Log\LoggerInterface;
+use Psr\Log\LoggerInterface;
 
 class Generate
 {

@@ -9,7 +9,7 @@ use setasign\Fpdi\Fpdi;
 use setasign\Fpdi\PdfParser\PdfParserException;
 use setasign\Fpdi\PdfParser\StreamReader;
 use setasign\Fpdi\PdfReader\PdfReaderException;
-use PSR\Log\LoggerInterface as Log;
+use Psr\Log\LoggerInterface as Log;
 
 class Barcode implements ItemsInterface
 {

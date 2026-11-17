@@ -16,6 +16,7 @@ use Magento\Shipping\Model\Shipping\LabelGenerator;
 use Magento\Ui\Component\MassAction\Filter;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Sales\Api\ShipmentRepositoryInterface;
+use Magento\Sales\Api\OrderRepositoryInterface;
 use Psr\Log\LoggerInterface;
 use setasign\Fpdi\PdfParser\PdfParserException;
 use Trunkrs\Carrier\Controller\Adminhtml\LabelAbstract;
@@ -72,6 +73,11 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
     private $shipmentRepository;
 
     /**
+     * @var OrderRepositoryInterface
+     */
+    private $orderRepository;
+
+    /**
      * @param Context $context
      * @param Data $helper
      * @param Order $convertOrder
@@ -86,6 +92,7 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
      * @param SearchCriteriaBuilder $searchCriteriaBuilder
      * @param LoggerInterface $logger
      * @param Filter $filter
+     * @param OrderRepositoryInterface $orderRepository
      */
     public function __construct(
         Context $context,
@@ -101,7 +108,8 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
         ShipmentRepositoryInterface $shipmentRepository,
         SearchCriteriaBuilder $searchCriteriaBuilder,
         LoggerInterface $logger,
-        Filter $filter
+        Filter $filter,
+        OrderRepositoryInterface $orderRepository
     ) {
         $this->helper = $helper;
         $this->convertOrder = $convertOrder;
@@ -113,6 +121,7 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->logger = $logger;
         $this->filter = $filter;
+        $this->orderRepository = $orderRepository;
         parent::__construct($context, $getLabels, $getPdf, $getPackingSlip);
     }
 
@@ -197,10 +206,10 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
 
         $orderShipment->getOrder()->setState(\Magento\Sales\Model\Order::STATE_PROCESSING);
         $orderShipment->getOrder()->setStatus('processing');
-        $orderShipment->getOrder()->save();
+        $this->orderRepository->save($orderShipment->getOrder());
 
         // save created Order Shipment
-        $orderShipment->save();
+        $this->shipmentRepository->save($orderShipment);
 
         $this->helper->sendTrunkrsShipment($order, $orderShipment);
 

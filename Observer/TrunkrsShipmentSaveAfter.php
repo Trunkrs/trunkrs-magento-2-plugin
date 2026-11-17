@@ -9,6 +9,8 @@ use Magento\Framework\Message\ManagerInterface;
 use Magento\Framework\Registry;
 use Magento\Sales\Api\Data\ShipmentTrackInterfaceFactory;
 use Magento\Sales\Model\Order;
+use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Sales\Api\ShipmentRepositoryInterface;
 use Psr\Log\LoggerInterface;
 use Trunkrs\Carrier\Model\Carrier\Shipping;
 use Trunkrs\Carrier\Helper\Data;
@@ -40,24 +42,40 @@ class TrunkrsShipmentSaveAfter implements ObserverInterface
     protected $registry;
 
     /**
+     * @var OrderRepositoryInterface
+     */
+    private $orderRepository;
+
+    /**
+     * @var ShipmentRepositoryInterface
+     */
+    private $shipmentRepository;
+
+    /**
      * @param Data $helper
      * @param LoggerInterface $logger
      * @param ManagerInterface $messageManager
      * @param ShipmentTrackInterfaceFactory $trackFactory
      * @param Registry $registry
+     * @param OrderRepositoryInterface $orderRepository
+     * @param ShipmentRepositoryInterface $shipmentRepository
      */
     public function __construct(
         Data $helper,
         LoggerInterface $logger,
         ManagerInterface $messageManager,
         ShipmentTrackInterfaceFactory $trackFactory,
-        Registry $registry
+        Registry $registry,
+        OrderRepositoryInterface $orderRepository,
+        ShipmentRepositoryInterface $shipmentRepository
     ) {
         $this->helper = $helper;
         $this->logger = $logger;
         $this->messageManager = $messageManager;
         $this->trackFactory = $trackFactory;
         $this->registry = $registry;
+        $this->orderRepository = $orderRepository;
+        $this->shipmentRepository = $shipmentRepository;
     }
 
     /**
@@ -121,7 +139,7 @@ class TrunkrsShipmentSaveAfter implements ObserverInterface
 
                     $order->setState(Order::STATE_PROCESSING);
                     $order->setStatus('processing');
-                    $order->save();
+                    $this->orderRepository->save($order);
 
                     $track = $this->trackFactory->create();
                     $track->setCarrierCode(self::CARRIER_CODE);
@@ -132,7 +150,7 @@ class TrunkrsShipmentSaveAfter implements ObserverInterface
                         ->setShippingAddressId($trunkrsNumber)
                         ->setShippingLabel(file_get_contents($labelUrl));
 
-                    $shipment->save();
+                    $this->shipmentRepository->save($shipment);
                 } catch (\Exception $e) {
                     $this->logger->critical($e->getMessage());
                     throw new \Magento\Framework\Exception\LocalizedException(
