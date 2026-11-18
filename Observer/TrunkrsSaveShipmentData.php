@@ -3,23 +3,36 @@
 namespace Trunkrs\Carrier\Observer;
 
 use Magento\Framework\Event\ObserverInterface;
+use Magento\Framework\Filesystem\Io\File;
 use Magento\Sales\Model\Order;
+use Magento\Sales\Model\ResourceModel\Order as OrderResource;
+use Magento\Sales\Model\ResourceModel\Order\Shipment as ShipmentResource;
 use Trunkrs\Carrier\Helper\Data;
 use Trunkrs\Carrier\Model\Carrier\Shipping;
 
 class TrunkrsSaveShipmentData implements ObserverInterface
 {
-    const TRUNKRS_SHIPPING_CODE = 'trunkrsShipping_trunkrsShipping';
-    const CARRIER_CODE = 'trunkrsShipping';
+    public const TRUNKRS_SHIPPING_CODE = 'trunkrsShipping_trunkrsShipping';
+    public const CARRIER_CODE = 'trunkrsShipping';
     /**
-     * @param Data $helper
+     * @var Data
      */
     public $helper;
 
     /**
-     * @var \Magento\Sales\Api\OrderRepositoryInterface
+     * @var OrderResource
      */
-    protected $orderRepository;
+    protected $orderResource;
+
+    /**
+     * @var ShipmentResource
+     */
+    private $shipmentResource;
+
+    /**
+     * @var File
+     */
+    private $ioFile;
 
     /**
      * @var \Magento\Sales\Model\Convert\Order
@@ -50,10 +63,13 @@ class TrunkrsSaveShipmentData implements ObserverInterface
      * TrunkrsSaveShipmentData constructor.
      * @param Data $helper
      * @param \Magento\Framework\Message\ManagerInterface $messageManager
-     * @param \Magento\Sales\Api\OrderRepositoryInterface $orderRepository
      * @param \Magento\Sales\Model\Convert\Order $convertOrder
      * @param \Magento\Sales\Api\Data\ShipmentTrackInterfaceFactory $trackFactory
+     * @param \Magento\Checkout\Model\Cart $cart
      * @param \Psr\Log\LoggerInterface $logger
+     * @param OrderResource $orderResource
+     * @param ShipmentResource $shipmentResource
+     * @param File $ioFile
      */
     public function __construct(
         Data $helper,
@@ -61,7 +77,10 @@ class TrunkrsSaveShipmentData implements ObserverInterface
         \Magento\Sales\Model\Convert\Order $convertOrder,
         \Magento\Sales\Api\Data\ShipmentTrackInterfaceFactory $trackFactory,
         \Magento\Checkout\Model\Cart $cart,
-        \Psr\Log\LoggerInterface $logger
+        \Psr\Log\LoggerInterface $logger,
+        OrderResource $orderResource,
+        ShipmentResource $shipmentResource,
+        File $ioFile
     ) {
         $this->helper = $helper;
         $this->messageManager = $messageManager;
@@ -69,12 +88,16 @@ class TrunkrsSaveShipmentData implements ObserverInterface
         $this->trackFactory = $trackFactory;
         $this->cart = $cart;
         $this->logger = $logger;
+        $this->orderResource = $orderResource;
+        $this->shipmentResource = $shipmentResource;
+        $this->ioFile = $ioFile;
     }
 
     /**
      * Fetch order details after order is placed
+     *
      * @param \Magento\Framework\Event\Observer $observer
-     * @return \Psr\Http\Message\ResponseInterface
+     * @return \Psr\Http\Message\ResponseInterface|null
      * @throws \Magento\Framework\Exception\LocalizedException
      */
     public function execute(\Magento\Framework\Event\Observer $observer)
@@ -111,11 +134,11 @@ class TrunkrsSaveShipmentData implements ObserverInterface
                 $orderShipment->register();
 
                 // Save created Order Shipment
-                $orderShipment->save();
+                $this->shipmentResource->save($orderShipment);
 
                 $orderShipment->getOrder()->setState(Order::STATE_PROCESSING);
                 $orderShipment->getOrder()->setStatus('processing');
-                $orderShipment->getOrder()->save();
+                $this->orderResource->save($orderShipment->getOrder());
 
                 try {
 
@@ -138,7 +161,7 @@ class TrunkrsSaveShipmentData implements ObserverInterface
                         ]
                     ];
 
-                    if(!empty($intendedDeliveryDate)) {
+                    if (!empty($intendedDeliveryDate)) {
                         $singleShipmentBody['intendedDeliveryDate'] = $intendedDeliveryDate;
                     }
 
@@ -160,9 +183,9 @@ class TrunkrsSaveShipmentData implements ObserverInterface
 
                     $orderShipment->addTrack($track)
                         ->setShippingAddressId($trunkrsNumber)
-                        ->setShippingLabel(file_get_contents($labelUrl));
+                        ->setShippingLabel($this->ioFile->read($labelUrl));
 
-                    $orderShipment->save();
+                    $this->shipmentResource->save($orderShipment);
 
                     return $response;
                 } catch (\Exception $e) {

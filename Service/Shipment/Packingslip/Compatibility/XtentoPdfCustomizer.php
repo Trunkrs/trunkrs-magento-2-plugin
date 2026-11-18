@@ -4,9 +4,6 @@ namespace Trunkrs\Carrier\Service\Shipment\Packingslip\Compatibility;
 
 use Magento\Sales\Api\Data\ShipmentInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
-use Xtento\PdfCustomizer\Helper\Data;
-use Xtento\PdfCustomizer\Model\Source\TemplateType;
-use Trunkrs\Carrier\Service\Shipment\Packingslip\Factory;
 
 class XtentoPdfCustomizer
 {
@@ -36,17 +33,16 @@ class XtentoPdfCustomizer
         OrderRepositoryInterface $orderRepository,
         DataHelperFactoryProxy   $dataHelper,
         GeneratePdfFactoryProxy  $pdfGenerator
-    )
-    {
+    ) {
         $this->orderRepository = $orderRepository;
         $this->dataHelper = $dataHelper;
         $this->pdfGenerator = $pdfGenerator;
     }
 
     /**
-     * @param Factory $factory
-     * @param ShipmentInterface $magentoShipment
+     * Generate the shipment PDF with Xtento.
      *
+     * @param ShipmentInterface $magentoShipment
      * @return mixed
      */
     public function getPdf(ShipmentInterface $magentoShipment)
@@ -55,7 +51,10 @@ class XtentoPdfCustomizer
         $order = $this->orderRepository->get($orderId);
 
         $xtentoDataHelper = $this->dataHelper->create();
-        $template = $xtentoDataHelper->getDefaultTemplate($order, TemplateType::TYPE_SHIPMENT);
+        $template = $xtentoDataHelper->getDefaultTemplate(
+            $order,
+            constant('Xtento\\PdfCustomizer\\Model\\Source\\TemplateType::TYPE_SHIPMENT')
+        );
         $templateId = $template->getId();
 
         $generatePdfHelper = $this->pdfGenerator->create();
@@ -65,13 +64,15 @@ class XtentoPdfCustomizer
     }
 
     /**
+     * Check whether Xtento shipment PDFs are enabled.
+     *
      * @return bool
      */
     public function isShipmentPdfEnabled()
     {
         $xtentoDataHelper = $this->dataHelper->create();
 
-        if ($xtentoDataHelper->isEnabled(Data::ENABLE_SHIPMENT)) {
+        if ($xtentoDataHelper->isEnabled(constant('Xtento\\PdfCustomizer\\Helper\\Data::ENABLE_SHIPMENT'))) {
             return true;
         }
 

@@ -9,12 +9,12 @@ use setasign\Fpdi\Fpdi;
 use setasign\Fpdi\PdfParser\PdfParserException;
 use setasign\Fpdi\PdfParser\StreamReader;
 use setasign\Fpdi\PdfReader\PdfReaderException;
-use PSR\Log\LoggerInterface as Log;
+use Psr\Log\LoggerInterface as Log;
 
 class Barcode implements ItemsInterface
 {
-    const TMP_TRUNKRS_LABEL_PATH = 'tmp' . DIRECTORY_SEPARATOR . 'temptrunkrslabel';
-    const TMP_TRUNKRS_LABEL_FILE = 'trunkrs_temp_label.jpeg';
+    public const TMP_TRUNKRS_LABEL_PATH = 'tmp' . DIRECTORY_SEPARATOR . 'temptrunkrslabel';
+    public const TMP_TRUNKRS_LABEL_FILE = 'trunkrs_temp_label.jpeg';
 
     /**
      * @var DirectoryList
@@ -50,16 +50,17 @@ class Barcode implements ItemsInterface
         DirectoryList $directoryList,
         IoFile        $ioFile,
         Log           $logger
-    )
-    {
+    ) {
         $this->directoryList = $directoryList;
         $this->ioFile = $ioFile;
         $this->logger = $logger;
     }
 
     /**
-     * @param $packingSlip
-     * @param $shipment
+     * Add the shipment barcode to the packing slip.
+     *
+     * @param string $packingSlip
+     * @param \Magento\Sales\Api\Data\ShipmentInterface $shipment
      * @return string
      * @throws PdfParserException
      */
@@ -72,8 +73,10 @@ class Barcode implements ItemsInterface
     }
 
     /**
-     * @param $packingSlip
-     * @param $label
+     * Load the packing slip and overlay its barcode.
+     *
+     * @param string $packingSlip
+     * @param string $label
      * @return Fpdi
      * @throws PdfParserException
      */
@@ -114,7 +117,9 @@ class Barcode implements ItemsInterface
     }
 
     /**
-     * @param $units
+     * Convert PDF points to millimeters.
+     *
+     * @param float $units
      * @return float
      */
     private function zendPdfUnitsToMM($units)
@@ -123,11 +128,13 @@ class Barcode implements ItemsInterface
     }
 
     /**
-     * @param $isLastPage
-     * @param $isMultiplePages
-     * @param $pdf
-     * @param $pageSize
-     * @param $label
+     * Overlay the label on the final packing slip page.
+     *
+     * @param bool $isLastPage
+     * @param bool $isMultiplePages
+     * @param Fpdi $pdf
+     * @param array $pageSize
+     * @param string $label
      * @return void
      * @throws FileSystemException
      */
@@ -144,8 +151,9 @@ class Barcode implements ItemsInterface
         $w = $this->zendPdfUnitsToMM($position[2]);
         $h = $this->zendPdfUnitsToMM($position[3]) - $this->zendPdfUnitsToMM($position[1]);
 
-        $tempAttachmentFile = $this->directoryList->getPath('var') . DIRECTORY_SEPARATOR . static::TMP_TRUNKRS_LABEL_PATH . '/' . uniqid('trunkrs-') . '.pdf';
-        file_put_contents($tempAttachmentFile, $label);
+        $tempAttachmentFile = $this->directoryList->getPath('var') . DIRECTORY_SEPARATOR
+            . static::TMP_TRUNKRS_LABEL_PATH . '/' . uniqid('trunkrs-') . '.pdf';
+        $this->ioFile->write($tempAttachmentFile, $label);
 
         if (($isLastPage && !$isMultiplePages) || ($isLastPage && $isMultiplePages)) {
             $pdf->setSourceFile($tempAttachmentFile);
@@ -153,7 +161,7 @@ class Barcode implements ItemsInterface
             $pdf->useTemplate($overlayTemplate, $x, $y, $w, $h);
         }
 
-        unlink($tempAttachmentFile);
+        $this->ioFile->rm($tempAttachmentFile);
     }
 
     /**
@@ -167,6 +175,8 @@ class Barcode implements ItemsInterface
     }
 
     /**
+     * Prepare the temporary label directory and file name.
+     *
      * @return void
      * @throws FileSystemException
      * @throws \Magento\Framework\Exception\LocalizedException

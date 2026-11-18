@@ -16,6 +16,8 @@ use Magento\Shipping\Model\Shipping\LabelGenerator;
 use Magento\Ui\Component\MassAction\Filter;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Sales\Api\ShipmentRepositoryInterface;
+use Magento\Sales\Model\ResourceModel\Order\Shipment as ShipmentResource;
+use Magento\Sales\Model\ResourceModel\Order as OrderResource;
 use Psr\Log\LoggerInterface;
 use setasign\Fpdi\PdfParser\PdfParserException;
 use Trunkrs\Carrier\Controller\Adminhtml\LabelAbstract;
@@ -31,7 +33,7 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
      */
     protected $orderIds = [];
     /**
-     * @param Data $helper
+     * @var Data
      */
     public $helper;
     /**
@@ -72,6 +74,16 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
     private $shipmentRepository;
 
     /**
+     * @var OrderResource
+     */
+    private $orderResource;
+
+    /**
+     * @var ShipmentResource
+     */
+    private $shipmentResource;
+
+    /**
      * @param Context $context
      * @param Data $helper
      * @param Order $convertOrder
@@ -86,6 +98,8 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
      * @param SearchCriteriaBuilder $searchCriteriaBuilder
      * @param LoggerInterface $logger
      * @param Filter $filter
+     * @param OrderResource $orderResource
+     * @param ShipmentResource $shipmentResource
      */
     public function __construct(
         Context $context,
@@ -101,7 +115,9 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
         ShipmentRepositoryInterface $shipmentRepository,
         SearchCriteriaBuilder $searchCriteriaBuilder,
         LoggerInterface $logger,
-        Filter $filter
+        Filter $filter,
+        OrderResource $orderResource,
+        ShipmentResource $shipmentResource
     ) {
         $this->helper = $helper;
         $this->convertOrder = $convertOrder;
@@ -113,10 +129,14 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->logger = $logger;
         $this->filter = $filter;
+        $this->orderResource = $orderResource;
+        $this->shipmentResource = $shipmentResource;
         parent::__construct($context, $getLabels, $getPdf, $getPackingSlip);
     }
 
     /**
+     * Create shipments and download their packing slips.
+     *
      * @return ResponseInterface|null
      * @throws NotFoundException|PdfParserException|\Zend_Pdf_Exception|LocalizedException
      */
@@ -133,7 +153,7 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
 
         foreach ($collection as $order) {
             $trunkrsShipment = $order->getShippingMethod() === self::TRUNKRS_SHIPPING_CODE;
-            if($trunkrsShipment) {
+            if ($trunkrsShipment) {
                 $this->orderIds[] = $order->getId();
                 $this->handleShipmentDataFromOrder($order);
             }
@@ -150,7 +170,9 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
     }
 
     /**
-     * @param $order
+     * Load or create the order shipments and their labels.
+     *
+     * @param \Magento\Sales\Model\Order $order
      * @return void
      * @throws NotFoundException|PdfParserException|\Zend_Pdf_Exception
      * @throws LocalizedException
@@ -174,7 +196,9 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
     }
 
     /**
-     * @param $order
+     * Create a shipment for the shippable order items.
+     *
+     * @param \Magento\Sales\Model\Order $order
      * @return Shipment
      * @throws LocalizedException
      */
@@ -197,10 +221,10 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
 
         $orderShipment->getOrder()->setState(\Magento\Sales\Model\Order::STATE_PROCESSING);
         $orderShipment->getOrder()->setStatus('processing');
-        $orderShipment->getOrder()->save();
+        $this->orderResource->save($orderShipment->getOrder());
 
         // save created Order Shipment
-        $orderShipment->save();
+        $this->shipmentResource->save($orderShipment);
 
         $this->helper->sendTrunkrsShipment($order, $orderShipment);
 
@@ -210,7 +234,7 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
     /**
      * Shipment by Order id
      *
-     * @param $orderId
+     * @param int|string $orderId
      * @return ShipmentInterface[]|null
      */
     public function getShipmentDataByOrderId($orderId)
@@ -220,7 +244,7 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
         try {
             $shipments = $this->shipmentRepository->getList($searchCriteria);
             $shipmentRecords = $shipments->getItems();
-        } catch (\Exception $exception)  {
+        } catch (\Exception $exception) {
             $this->logger->critical($exception->getMessage());
             $shipmentRecords = null;
         }
@@ -229,7 +253,8 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
 
     /**
      * Handle loading shipments
-     * @param $shipments
+     *
+     * @param ShipmentInterface|ShipmentInterface[]|null $shipments
      * @return void
      * @throws NotFoundException|PdfParserException|\Zend_Pdf_Exception
      */
@@ -243,11 +268,12 @@ class CreateShipmentAndPrintPackingSlips extends LabelAbstract
         foreach ($shipments as $shipment) {
             $this->loadLabel($shipment);
         }
-
     }
 
     /**
-     * @param $shipment
+     * Load the shipment packing slip.
+     *
+     * @param ShipmentInterface $shipment
      * @return void
      * @throws NotFoundException|\Zend_Pdf_Exception|PdfParserException
      */

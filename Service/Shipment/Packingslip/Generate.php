@@ -6,7 +6,7 @@ use setasign\Fpdi\Fpdi;
 use setasign\Fpdi\PdfParser\PdfParserException;
 use setasign\Fpdi\PdfParser\StreamReader;
 use setasign\Fpdi\PdfReader\PdfReaderException;
-use PSR\Log\LoggerInterface;
+use Psr\Log\LoggerInterface;
 
 class Generate
 {
@@ -24,8 +24,9 @@ class Generate
     }
 
     /**
-     * @param array $labels
+     * Combine labels into a single PDF.
      *
+     * @param array $labels
      * @return string
      */
     public function run(array $labels)
@@ -40,9 +41,11 @@ class Generate
     }
 
     /**
-     * @param $label
-     * @param $pdf
-     * @return mixed
+     * Append the label pages to the PDF.
+     *
+     * @param string $label
+     * @param Fpdi $pdf
+     * @return Fpdi
      */
     private function addLabelToPdf($label, $pdf)
     {
